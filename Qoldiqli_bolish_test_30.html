@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qoldiqli bo'lish: mukammal test (30 ta savol)</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:Georgia,'Times New Roman',serif;background:#fff;margin:0;padding:0;color:#1b2430;}
+  .wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px;}
+  #qimgWrap img{max-width:100%;border-radius:10px;cursor:zoom-in;transition:opacity .15s;}
+  #qimgWrap img:active{opacity:0.85;}
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(10,14,20,0.92);z-index:999;align-items:center;justify-content:center;padding:20px;}
+  .lightbox.open{display:flex;}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,0.5);}
+  .lightbox-hint{position:fixed;bottom:24px;left:0;right:0;text-align:center;color:#cfd6e0;font-family:Arial,sans-serif;font-size:13px;z-index:1000;}
+  h1{font-family:Arial,sans-serif;font-size:20px;color:#1a2a55;margin:6px 0 2px;}
+  .subtitle{font-family:Arial,sans-serif;color:#8a93a6;font-size:14px;margin-bottom:14px;}
+  .stats{font-family:Arial,sans-serif;color:#8a93a6;font-size:13px;display:flex;gap:18px;margin-bottom:14px;}
+  .stats b{color:#1b2430;}
+  .gridnav{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-bottom:22px;max-height:340px;overflow-y:auto;padding-right:4px;}
+  .gridnav button{font-family:Arial,sans-serif;border:1px solid #e3e6ee;background:#f7f8fb;color:#5b6474;border-radius:8px;padding:8px 0;font-size:12px;cursor:pointer;}
+  .gridnav button.current{background:#1a2a55;color:#fff;border-color:#1a2a55;}
+  .gridnav button.answered{background:#eef1fa;border-color:#b9c2de;color:#3a4358;}
+  .gridnav button.correctQ{background:#eaf7ec;border-color:#2fa84f;color:#1c7a33;font-weight:bold;}
+  .gridnav button.wrongQ{background:#fdecec;border-color:#e05252;color:#c23c3c;font-weight:bold;}
+  .gridnav button.correctQ.current,.gridnav button.wrongQ.current,.gridnav button.answered.current{background:#1a2a55;color:#fff;border-color:#1a2a55;}
+
+  .qbadge{display:inline-block;background:#1a2a55;color:#fff;font-family:Arial,sans-serif;font-size:14px;padding:8px 18px;border-radius:20px;margin-bottom:14px;}
+  .qtext{font-size:17px;line-height:1.55;margin-bottom:16px;color:#1b2430;}
+  .qtext .premise{background:#eef1fa;border-left:5px solid #1a2a55;border-radius:10px;padding:13px 15px;margin-bottom:14px;color:#1a2a55;font-weight:bold;}
+  .qtext .speaker{border-radius:10px;padding:12px 14px;margin:10px 0;font-family:Arial,sans-serif;font-size:15.5px;line-height:1.55;}
+  .qtext .speaker .speakerName{display:block;font-weight:bold;margin-bottom:4px;}
+  .qtext .speaker.speakerA{background:#fff4e6;border-left:5px solid #d9822b;color:#6e3d0c;}
+  .qtext .speaker.speakerB{background:#eaf7f7;border-left:5px solid #159a9c;color:#0b5556;}
+  .qtext .ask{background:#f0f3fb;border:1px solid #c7cde0;border-radius:10px;padding:12px 14px;margin-top:15px;color:#1a2a55;font-weight:bold;}
+
+  .opt{display:block;width:100%;text-align:left;font-family:Arial,sans-serif;font-size:15.5px;padding:14px 16px;margin-bottom:12px;border-radius:12px;border:1px solid #e3e6ee;background:#fff;cursor:pointer;color:#1b2430;}
+  .opt:hover{background:#f7f8fb;}
+  .opt.selected{border-color:#1a2a55;background:#eef1fa;}
+  .opt.correctAns{border:2px solid #2fa84f;background:#eafbee;color:#1c7a33;font-weight:bold;}
+  .opt.wrongAns{border:2px solid #e05252;background:#fdecec;color:#c23c3c;font-weight:bold;}
+
+  .checkbtn{font-family:Arial,sans-serif;background:#7e93c9;color:#fff;border:none;padding:14px 28px;border-radius:24px;font-size:16px;cursor:pointer;display:block;margin:6px 0 18px;}
+  .checkbtn:hover{background:#6c81b8;}
+  .checkbtn:disabled{opacity:.5;cursor:default;}
+
+  .feedback{font-family:Arial,sans-serif;padding:14px 16px;border-radius:12px;font-size:15px;margin-bottom:18px;border:1px solid;display:none;}
+  .feedback.ok{display:block;background:#eafbee;border-color:#2fa84f;color:#1c7a33;}
+  .feedback.bad{display:block;background:#fdecec;border-color:#e05252;color:#c23c3c;}
+
+  .step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+  .stepnum{flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:2px solid #1a2a55;color:#1a2a55;font-family:Arial,sans-serif;font-weight:bold;display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .stepbody{font-family:Arial,sans-serif;flex:1;}
+  .stepbody .lbl{font-size:12px;letter-spacing:.02em;color:#6b7386;text-transform:uppercase;margin-bottom:4px;font-weight:bold;}
+  .stepbody .eq{background:#f7f8fb;border:1px solid #e3e6ee;border-radius:10px;padding:11px 13px;font-size:15px;font-family:'Courier New',monospace;color:#1b2430;}
+  .finalnote{font-family:Arial,sans-serif;font-size:15px;color:#1a2a55;background:#f0f3fb;border-left:4px solid #1a2a55;padding:12px 14px;border-radius:6px;margin-top:6px;margin-bottom:20px;}
+
+  .navrow{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+  .navrow button{width:52px;height:52px;border-radius:50%;border:1px solid #c7cde0;background:#fff;font-size:20px;color:#1a2a55;cursor:pointer;}
+  .navrow button:disabled{opacity:.3;cursor:default;}
+  .navrow .pos{font-family:Arial,sans-serif;color:#5b6474;font-size:15px;}
+  .footerNote{font-family:Arial,sans-serif;color:#8a93a6;font-size:12.5px;text-align:center;margin-top:26px;line-height:1.5;}
+
+  .finishRow{margin-top:8px;margin-bottom:10px;}
+  .finishBtn{font-family:Arial,sans-serif;background:#1a2a55;color:#fff;border:none;padding:14px 24px;border-radius:24px;font-size:15px;cursor:pointer;width:100%;}
+  .finishBtn:hover{background:#12203f;}
+
+  /* Yakuniy natija ekrani */
+  .resultScreen{display:none;text-align:center;padding:30px 10px;}
+  .resultScreen.show{display:block;}
+  .resultScreen .bigscore{font-family:Arial,sans-serif;font-size:52px;font-weight:bold;color:#1a2a55;margin:10px 0 4px;}
+  .resultScreen .pct{font-family:Arial,sans-serif;font-size:20px;color:#5b6474;margin-bottom:24px;}
+  .resultScreen .nameRow{margin-bottom:20px;}
+  .resultScreen input{font-family:Arial,sans-serif;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #d3d8e6;width:80%;max-width:280px;}
+  .resultScreen .sendStatus{font-family:Arial,sans-serif;font-size:13px;color:#8a93a6;margin-top:10px;min-height:18px;}
+  .restartBtn{font-family:Arial,sans-serif;background:#eef1fa;color:#1a2a55;border:1px solid #c7cde0;padding:12px 22px;border-radius:20px;font-size:14px;cursor:pointer;margin-top:10px;}
+  #quizArea.hidden{display:none;}
+.catBreakdown{margin:14px 0 22px;text-align:left;max-width:340px;margin-left:auto;margin-right:auto;display:none;}
+  .catBreakdown .catTitle{font-family:Arial,sans-serif;font-size:12.5px;color:#8a93a6;text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.03em;}
+  .catRow{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-radius:10px;margin-bottom:6px;font-family:Arial,sans-serif;font-size:14px;}
+  .catRow.good{background:#eafbee;color:#1c7a33;}
+  .catRow.weak{background:#fdecec;color:#c23c3c;}
+  .catRow .catName{font-weight:500;}
+  .catRow .catScore{font-weight:bold;}
+  .catLegend{font-family:Arial,sans-serif;font-size:11.5px;color:#9aa1b5;text-align:center;margin-bottom:14px;line-height:1.5;}
+  .gridnav{max-height:340px;} #miniTimer::before{content:"⏱ ";font-size:.72em;opacity:.75;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============================================================= -->
+  <!--  BU YERGA TEGMANG — asosiy test qismi (motor).                 -->
+  <!--  Har yangi mavzu uchun faqat pastdagi TEST_CONFIG blokini      -->
+  <!--  o'zgartirasiz (fayl oxirida, <script> ichida).                -->
+  <!-- ============================================================= -->
+
+  <div id="quizArea">
+    <h1 id="pageTitle">Qoldiqli bo'lish</h1>
+    <div class="subtitle" id="pageSubtitle"></div><div class="subtitle" id="pageAuthor" style="margin-top:-8px;color:#1a2a55;font-weight:bold;"></div><div id="miniTimer" style="display:inline-block;background:#eef1fa;color:#1a2a55;border-radius:9px;padding:5px 12px;margin:-5px 0 12px;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;letter-spacing:.04em;">00:00:00</div>
+    <div class="stats">Yechilgan: <b id="statAnswered">0/0</b></div>
+
+    <div class="gridnav" id="gridnav"></div>
+
+    <div class="qbadge" id="qbadge">1-savol</div>
+    <div class="qtext" id="qtext"></div>
+    <div id="qimgWrap"></div>
+
+    <div class="lightbox" id="lightbox" onclick="this.classList.remove('open');document.getElementById('lightboxHint').style.display='none';">
+      <img id="lightboxImg" src="" alt="kattalashtirilgan rasm">
+    </div>
+    <div class="lightbox-hint" id="lightboxHint" style="display:none;">Yopish uchun istalgan joyni bosing</div>
+
+    <div id="answerArea"></div>
+
+    <button class="checkbtn" id="checkBtn">Tekshirish</button>
+
+    <div class="feedback" id="feedback"></div>
+    <div id="explainWrap"></div>
+
+    <div class="navrow">
+      <button id="prevBtn">&larr;</button>
+      <div class="pos" id="posLabel">1 / 1</div>
+      <button id="nextBtn">&rarr;</button>
+    </div>
+
+    <div class="finishRow">
+      <button class="finishBtn" id="finishBtn">Testni yakunlash va natijani ko'rish</button>
+    </div>
+
+    <div class="footerNote">
+      Javobni tanlang &rarr; "Tekshirish" tugmasini bosing &rarr; yechim qadam-baqadam ochiladi
+    </div>
+  </div>
+
+  <!-- Yakuniy natija ekrani -->
+  <div class="resultScreen" id="resultScreen">
+    <h1>Test yakunlandi! 🎉</h1>
+    <div class="bigscore" id="bigScore">0/0</div>
+    <div class="pct" id="pctScore">0%</div>
+    <div class="pct" id="timeNote" style="font-size:13px;color:#9aa1b5;margin-top:-8px;margin-bottom:6px;"></div>
+    <div class="catBreakdown" id="catBreakdown">
+      <div class="catTitle">Mavzular bo'yicha natija</div>
+      <div class="catLegend">✅ hamma to'g'ri &nbsp;•&nbsp; ⚠️ xato bor &nbsp;•&nbsp; raqamlar: to'g'ri&nbsp;javob&nbsp;/&nbsp;jami&nbsp;savol</div>
+      <div id="catList"></div>
+    </div>
+
+    <div class="nameRow">
+      <input type="text" id="nameInput" placeholder="Ismingizni kiriting">
+      <div><button class="finishBtn" style="margin-top:12px;width:auto;padding:12px 24px;" id="sendResultBtn">Natijani yuborish</button></div>
+      <div class="sendStatus" id="sendStatus"></div>
+      <div id="resendZone" style="display:none;margin-top:6px;">
+        <span id="resendLink" style="font-family:Arial,sans-serif;font-size:12px;color:#8a93a6;text-decoration:underline;cursor:pointer;">Ishonchim komil emas, qayta yuborish</span>
+      </div>
+    </div>
+
+    <div class="footerNote" id="authorResult" style="margin-top:10px;font-weight:bold;color:#1a2a55;"></div>
+    <button class="restartBtn" id="restartBtn">Testni qaytadan boshlash</button>
+    <div class="footerNote" id="lockedNote" style="display:none;">
+      &#9989; Bu test yakunlandi va shu qurilmada qulflandi.<br>Ertalab soat 8:00 da avtomatik qayta ochiladi.
+    </div>
+    <!-- O'qituvchi uchun: shu matnni bosilsa, qayta ochish kodi so'raladi -->
+    <div id="unlockTapZone" style="text-align:center;margin-top:22px;">
+      <span style="font-family:Arial,sans-serif;font-size:12px;color:#c7cde0;cursor:pointer;border-bottom:1px dotted #c7cde0;padding-bottom:2px;">O'qituvchi uchun</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =====================================================================
+   ==========  FAQAT SHU YERDAN PASTINI HAR YANGI MAVZU UCHUN  ==========
+   ==========  O'ZGARTIRING. YUQORIDAGI HTML/CSS GA TEGMANG.   ==========
+   ===================================================================== */
+
+const TEST_CONFIG = {"title": "Qoldiqli_bolish_test_30", "subtitle": "Atamalar, formula, bo'lishni bajarish, tekshirish va masalalar", "author": "Fayziyev Azizbek", "formUrl": "https://docs.google.com/forms/d/e/1FAIpQLSfZUmdCVol5FGrqSlPj3ZrbBF5L48tVjzvLP_nGz9M3M3o_ag/formResponse", "entryIsm": "entry.650362337", "entryBall": "entry.1056081243", "entryMavzu": "entry.854585668", "teacherUnlockCode": "0000", "questions": [{"n": 1, "options": ["bo'linuvchi", "to'liqsiz bo'linma", "qoldiq", "bo'luvchi"], "correct": 0, "mavzu": "Atamalar va qoidalar", "premise": "a = b · c + r", "ask": "Bu formulada a nimani bildiradi?", "steps": [["1-qadam", "Formulada: a — bo'linuvchi, b — bo'luvchi, c — to'liqsiz bo'linma, r — qoldiq."], ["2-qadam", "a — bo'linadigan son, ya'ni hammasi."], ["Xulosa", "To'g'ri javob: <b>bo'linuvchi<\/b>."]], "note": "To'g'ri javob: <b>bo'linuvchi<\/b>."}, {"n": 2, "options": ["bo'linuvchi", "bo'luvchi", "qoldiq", "to'liqsiz bo'linma"], "correct": 3, "mavzu": "Atamalar va qoidalar", "premise": "a = b · c + r", "ask": "Bu formulada c nimani bildiradi?", "steps": [["1-qadam", "c — to'liqsiz bo'linma."], ["2-qadam", "U bo'luvchi bo'linuvchiga necha marta to'liq sig'ishini bildiradi."], ["Xulosa", "To'g'ri javob: <b>to'liqsiz bo'linma<\/b>."]], "note": "To'g'ri javob: <b>to'liqsiz bo'linma<\/b>."}, {"n": 3, "options": ["55", "9", "6", "1"], "correct": 3, "mavzu": "Atamalar va qoidalar", "premise": "55 : 9 = 6 (qoldiq 1)", "ask": "Bu yozuvda qoldiq qaysi son?", "steps": [["1-qadam", "55 — bo'linuvchi, 9 — bo'luvchi, 6 — to'liqsiz bo'linma."], ["2-qadam", "Qavs ichida yozilgan son qoldiq: 1."], ["Xulosa", "To'g'ri javob: <b>1<\/b>."]], "note": "To'g'ri javob: <b>1<\/b>."}, {"n": 4, "options": ["r > b", "r ≥ b", "0 ≤ r < b", "r = b"], "correct": 2, "mavzu": "Atamalar va qoidalar", "premise": "Qoldiq qoidasi", "ask": "Qoldiq haqidagi to'g'ri qoida qaysi?", "steps": [["1-qadam", "Qoldiq bo'luvchidan doim kichik bo'ladi."], ["2-qadam", "Agar qoldiq bo'luvchiga teng yoki undan katta bo'lsa, bo'luvchi yana bir marta sig'ardi."], ["3-qadam", "Demak: 0 ≤ r &lt; b."], ["Xulosa", "To'g'ri javob: <b>0 ≤ r < b<\/b>."]], "note": "To'g'ri javob: <b>0 ≤ r < b<\/b>."}, {"n": 5, "options": ["5", "6", "3", "0"], "correct": 1, "mavzu": "Atamalar va qoidalar", "premise": "Bo'luvchi 6", "ask": "Qaysi son qoldiq bo'la OLMAYDI?", "steps": [["1-qadam", "Bo'luvchi 6 bo'lsa, qoldiq 0 dan 5 gacha bo'ladi: 0, 1, 2, 3, 4, 5."], ["2-qadam", "6 qoldiq bo'la olmaydi, chunki u bo'luvchiga teng."], ["Xulosa", "To'g'ri javob: <b>6<\/b>."]], "note": "To'g'ri javob: <b>6<\/b>."}, {"n": 6, "options": ["a = b : c + r", "a = b · c − r", "a = b + c + r", "a = b · c + r"], "correct": 3, "mavzu": "Atamalar va qoidalar", "premise": "Bo'linuvchini topish", "ask": "Qoldiqli bo'lishda bo'linuvchini topish formulasi qaysi?", "steps": [["1-qadam", "To'liqsiz bo'linmani bo'luvchiga ko'paytiramiz: b · c."], ["2-qadam", "Ko'paytmaga qoldiqni qo'shamiz: a = b · c + r."], ["Xulosa", "To'g'ri javob: <b>a = b · c + r<\/b>."]], "note": "To'g'ri javob: <b>a = b · c + r<\/b>."}, {"n": 7, "options": ["35", "39", "15", "38"], "correct": 3, "mavzu": "Bo'linuvchini topish", "premise": "Bo'luvchi 5, to'liqsiz bo'linma 7, qoldiq 3.", "ask": "Bo'linuvchi a ni toping.", "steps": [["1-qadam", "b · c ni hisoblaymiz: 5 · 7 = 35"], ["2-qadam", "Qoldiqni qo'shamiz: 35 + 3 = 38"], ["Xulosa", "To'g'ri javob: <b>38<\/b>."]], "note": "To'g'ri javob: <b>38<\/b>."}, {"n": 8, "options": ["7", "5", "6", "4"], "correct": 1, "mavzu": "Qoldiqli bo'lishni bajarish", "premise": "39 : 7", "ask": "To'liqsiz bo'linmani toping.", "steps": [["1-qadam", "7 · 5 = 35 (39 dan oshmaydi), 7 · 6 = 42 (39 dan katta). Demak to'liqsiz bo'linma 5."], ["2-qadam", "Qoldiq: 39 − 35 = 4"], ["3-qadam", "Tekshiramiz: 4 &lt; 7 va 7 · 5 + 4 = 39"], ["Xulosa", "To'g'ri javob: <b>5<\/b>."]], "note": "To'g'ri javob: <b>5<\/b>."}, {"n": 9, "options": ["2", "4", "6", "1"], "correct": 3, "mavzu": "Qoldiqli bo'lishni bajarish", "premise": "29 : 7", "ask": "Qoldiqni toping.", "steps": [["1-qadam", "7 · 4 = 28 (29 dan oshmaydi), 7 · 5 = 35 (29 dan katta). Demak to'liqsiz bo'linma 4."], ["2-qadam", "Qoldiq: 29 − 28 = 1"], ["3-qadam", "Tekshiramiz: 1 &lt; 7 va 7 · 4 + 1 = 29"], ["Xulosa", "To'g'ri javob: <b>1<\/b>."]], "note": "To'g'ri javob: <b>1<\/b>."}, {"n": 10, "options": ["17 : 5 = 3 (qoldiq 5)", "17 : 5 = 2 (qoldiq 7)", "17 : 5 = 3 (qoldiq 2)", "17 : 5 = 4 (qoldiq 2)"], "correct": 2, "mavzu": "Tekshirish", "premise": "17 : 5", "ask": "Qaysi bo'lish to'g'ri bajarilgan?", "steps": [["1-qadam", "5 · 3 = 15, 17 − 15 = 2. Demak 17 : 5 = 3 (qoldiq 2)."], ["2-qadam", "Qoldiq 2 &lt; 5, shart bajarildi."], ["3-qadam", "Boshqa variantlar: qoldiq 5 yoki 7 bo'luvchidan katta/teng; 4 (qoldiq 2) da 5 · 4 + 2 = 22, 17 emas."], ["Xulosa", "To'g'ri javob: <b>17 : 5 = 3 (qoldiq 2)<\/b>."]], "note": "To'g'ri javob: <b>17 : 5 = 3 (qoldiq 2)<\/b>."}, {"n": 11, "options": ["84", "75", "83", "98"], "correct": 2, "mavzu": "Bo'linuvchini topish", "premise": "b = 15, c = 5, r = 8", "ask": "Bo'linuvchi a ni toping.", "steps": [["1-qadam", "b · c ni hisoblaymiz: 15 · 5 = 75"], ["2-qadam", "Qoldiqni qo'shamiz: 75 + 8 = 83"], ["Xulosa", "To'g'ri javob: <b>83<\/b>."]], "note": "To'g'ri javob: <b>83<\/b>."}, {"n": 12, "options": ["9", "8", "7", "6"], "correct": 1, "mavzu": "Qoldiqli bo'lishni bajarish", "premise": "190 : 23", "ask": "To'liqsiz bo'linmani toping.", "steps": [["1-qadam", "23 · 8 = 184 (190 dan oshmaydi), 23 · 9 = 207 (190 dan katta). Demak to'liqsiz bo'linma 8."], ["2-qadam", "Qoldiq: 190 − 184 = 6"], ["3-qadam", "Tekshiramiz: 6 &lt; 23 va 23 · 8 + 6 = 190"], ["Xulosa", "To'g'ri javob: <b>8<\/b>."]], "note": "To'g'ri javob: <b>8<\/b>."}, {"n": 13, "options": ["6", "5", "28", "18"], "correct": 1, "mavzu": "Qoldiqli bo'lishni bajarish", "premise": "649 : 23", "ask": "Qoldiqni toping.", "steps": [["1-qadam", "23 · 28 = 644 (649 dan oshmaydi), 23 · 29 = 667 (649 dan katta). Demak to'liqsiz bo'linma 28."], ["2-qadam", "Qoldiq: 649 − 644 = 5"], ["3-qadam", "Tekshiramiz: 5 &lt; 23 va 23 · 28 + 5 = 649"], ["Xulosa", "To'g'ri javob: <b>5<\/b>."]], "note": "To'g'ri javob: <b>5<\/b>."}, {"n": 14, "options": ["Yo'q, qoldiq bo'luvchidan katta yoki teng", "Yo'q, b · c + r bo'linuvchiga teng emas", "Aniqlab bo'lmaydi", "Ha, to'g'ri"], "correct": 3, "mavzu": "Tekshirish", "premise": "347 : 25 = 13 (qoldiq 22)", "ask": "Bo'lish to'g'ri bajarilganmi?", "steps": [["1-qadam", "25 · 13 = 325"], ["2-qadam", "325 + 22 = 347, bo'linuvchiga teng"], ["3-qadam", "22 &lt; 25, qoldiq qoidasi ham bajarildi."], ["Xulosa", "To'g'ri javob: <b>Ha, to'g'ri<\/b>."]], "note": "To'g'ri javob: <b>Ha, to'g'ri<\/b>."}, {"n": 15, "options": ["Yo'q, b · c + r bo'linuvchiga teng emas", "Yo'q, qoldiq bo'luvchidan katta yoki teng", "Aniqlab bo'lmaydi", "Ha, to'g'ri"], "correct": 0, "mavzu": "Tekshirish", "premise": "100 : 12 = 8 (qoldiq 3)", "ask": "Bo'lish to'g'ri bajarilganmi?", "steps": [["1-qadam", "12 · 8 = 96"], ["2-qadam", "96 + 3 = 99, bu 100 ga teng emas"], ["3-qadam", "To'g'risi: 100 : 12 = 8 (qoldiq 4)."], ["Xulosa", "To'g'ri javob: <b>Yo'q, b · c + r bo'linuvchiga teng emas<\/b>."]], "note": "To'g'ri javob: <b>Yo'q, b · c + r bo'linuvchiga teng emas<\/b>."}, {"n": 16, "options": ["22", "1", "21", "23"], "correct": 2, "mavzu": "Eng katta va eng kichik bo'linuvchi", "premise": "Bo'luvchi 22", "ask": "Qoldiq qabul qila oladigan eng katta qiymat nechaga teng?", "steps": [["1-qadam", "Qoldiq 22 dan kichik bo'ladi: 0 dan 21 gacha."], ["2-qadam", "Eng katta qoldiq b − 1 = 22 − 1 = 21."], ["Xulosa", "To'g'ri javob: <b>21<\/b>."]], "note": "To'g'ri javob: <b>21<\/b>."}, {"n": 17, "options": ["136", "152", "153", "137"], "correct": 1, "mavzu": "Eng katta va eng kichik bo'linuvchi", "premise": "Bo'luvchi 17, to'liqsiz bo'linma 8.", "ask": "Eng katta bo'linuvchini toping.", "steps": [["1-qadam", "Eng katta qoldiq: 17 − 1 = 16"], ["2-qadam", "a = 17 · 8 + 16 = 136 + 16 = 152"], ["Xulosa", "To'g'ri javob: <b>152<\/b>."]], "note": "To'g'ri javob: <b>152<\/b>."}, {"n": 18, "options": ["417", "431", "416", "432"], "correct": 0, "mavzu": "Eng katta va eng kichik bo'linuvchi", "premise": "Bo'luvchi 16, to'liqsiz bo'linma 26.", "ask": "Qoldiqli bo'lishdagi eng kichik bo'linuvchini toping.", "steps": [["1-qadam", "Qoldiqli bo'lishda eng kichik qoldiq 1 (qoldiq 0 bo'lsa, qoldiqsiz bo'linadi)."], ["2-qadam", "a = 16 · 26 + 1 = 416 + 1 = 417"], ["Xulosa", "To'g'ri javob: <b>417<\/b>."]], "note": "To'g'ri javob: <b>417<\/b>."}, {"n": 19, "options": ["13", "14", "12", "7"], "correct": 0, "mavzu": "Noma'lumni topish va masalalar", "premise": "202 ta kitobni 15 tadan javonlarga joylashtirishdi.", "ask": "Nechta javon to'ladi?", "steps": [["1-qadam", "202 : 15 bo'lamiz."], ["1-qadam", "15 · 13 = 195 (202 dan oshmaydi), 15 · 14 = 210 (202 dan katta). Demak to'liqsiz bo'linma 13."], ["2-qadam", "Qoldiq: 202 − 195 = 7"], ["Izoh", "13 ta javon to'ladi, 7 ta kitob ortib qoladi."], ["Xulosa", "To'g'ri javob: <b>13<\/b>."]], "note": "To'g'ri javob: <b>13<\/b>."}, {"n": 20, "options": ["2", "7", "34", "1"], "correct": 3, "mavzu": "Noma'lumni topish va masalalar", "premise": "273 ta kitobni 8 tadan javonlarga joylashtirishdi.", "ask": "Nechta kitob ortib qoladi?", "steps": [["1-qadam", "273 : 8 bo'lamiz."], ["1-qadam", "8 · 34 = 272 (273 dan oshmaydi), 8 · 35 = 280 (273 dan katta). Demak to'liqsiz bo'linma 34."], ["2-qadam", "Qoldiq: 273 − 272 = 1"], ["Izoh", "34 ta javon to'ladi, 1 ta kitob ortib qoladi."], ["Xulosa", "To'g'ri javob: <b>1<\/b>."]], "note": "To'g'ri javob: <b>1<\/b>."}, {"n": 21, "options": ["4246", "4189", "4303", "4218"], "correct": 0, "mavzu": "Bo'linuvchini topish", "premise": "Bo'luvchi 57, to'liqsiz bo'linma 74, qoldiq 28.", "ask": "Bo'linuvchi a ni toping.", "steps": [["1-qadam", "b · c ni hisoblaymiz: 57 · 74 = 4218"], ["2-qadam", "Qoldiqni qo'shamiz: 4218 + 28 = 4246"], ["Xulosa", "To'g'ri javob: <b>4246<\/b>."]], "note": "To'g'ri javob: <b>4246<\/b>."}, {"n": 22, "options": ["21", "20", "22", "53"], "correct": 0, "mavzu": "Qoldiqli bo'lishni bajarish", "premise": "1208 : 55", "ask": "To'liqsiz bo'linmani toping.", "steps": [["1-qadam", "55 · 21 = 1155 (1208 dan oshmaydi), 55 · 22 = 1210 (1208 dan katta). Demak to'liqsiz bo'linma 21."], ["2-qadam", "Qoldiq: 1208 − 1155 = 53"], ["3-qadam", "Tekshiramiz: 53 &lt; 55 va 55 · 21 + 53 = 1208"], ["Xulosa", "To'g'ri javob: <b>21<\/b>."]], "note": "To'g'ri javob: <b>21<\/b>."}, {"n": 23, "options": ["6", "32", "5", "23"], "correct": 2, "mavzu": "Qoldiqli bo'lishni bajarish", "premise": "3594 : 37", "ask": "Qoldiqni toping.", "steps": [["1-qadam", "37 · 97 = 3589 (3594 dan oshmaydi), 37 · 98 = 3626 (3594 dan katta). Demak to'liqsiz bo'linma 97."], ["2-qadam", "Qoldiq: 3594 − 3589 = 5"], ["3-qadam", "Tekshiramiz: 5 &lt; 37 va 37 · 97 + 5 = 3594"], ["Xulosa", "To'g'ri javob: <b>5<\/b>."]], "note": "To'g'ri javob: <b>5<\/b>."}, {"n": 24, "options": ["20", "21", "14", "34"], "correct": 0, "mavzu": "Noma'lumni topish va masalalar", "premise": "Bo'linuvchi 694, to'liqsiz bo'linma 34, qoldiq 14.", "ask": "Bo'luvchini toping.", "steps": [["1-qadam", "Formula: a = b · c + r, bundan b · c = a − r."], ["2-qadam", "694 − 14 = 680"], ["3-qadam", "b = 680 : 34 = 20"], ["Tekshirish", "20 · 34 + 14 = 694"], ["Xulosa", "To'g'ri javob: <b>20<\/b>."]], "note": "To'g'ri javob: <b>20<\/b>."}, {"n": 25, "options": ["3", "30", "25", "26"], "correct": 2, "mavzu": "Noma'lumni topish va masalalar", "premise": "Bo'linuvchi 753, bo'luvchi 30, qoldiq 3.", "ask": "To'liqsiz bo'linmani toping.", "steps": [["1-qadam", "b · c = a − r = 753 − 3 = 750"], ["2-qadam", "c = 750 : 30 = 25"], ["Tekshirish", "30 · 25 + 3 = 753"], ["Xulosa", "To'g'ri javob: <b>25<\/b>."]], "note": "To'g'ri javob: <b>25<\/b>."}, {"n": 26, "options": ["253", "495", "494", "484"], "correct": 1, "mavzu": "Eng katta va eng kichik bo'linuvchi", "premise": "Bo'luvchi 11, to'liqsiz bo'linma 22.", "ask": "Eng katta va eng kichik bo'linuvchilarning yig'indisini toping.", "steps": [["1-qadam", "Eng katta: 11 · 22 + 10 = 252"], ["2-qadam", "Eng kichik: 11 · 22 + 1 = 243"], ["3-qadam", "Yig'indi: 252 + 243 = 495"], ["Xulosa", "To'g'ri javob: <b>495<\/b>."]], "note": "To'g'ri javob: <b>495<\/b>."}, {"n": 27, "options": ["6", "7", "12", "47"], "correct": 0, "mavzu": "Noma'lumni topish va masalalar", "premise": "858 : 18", "ask": "858 ga eng kamida nechta qo'shsak, natija 18 ga qoldiqsiz bo'linadi?", "steps": [["1-qadam", "858 : 18 = 47 (qoldiq 12)"], ["2-qadam", "Keyingi qoldiqsiz bo'linadigan son: 18 · 48 = 864"], ["3-qadam", "Qo'shiladigan son: 864 − 858 = 6, ya'ni 18 − 12"], ["Xulosa", "To'g'ri javob: <b>6<\/b>."]], "note": "To'g'ri javob: <b>6<\/b>."}, {"n": 28, "options": ["8", "10", "9", "16"], "correct": 2, "mavzu": "Noma'lumni topish va masalalar", "premise": "376 ta o'quvchi, har avtobusda 45 kishi.", "ask": "Hammasini olib ketish uchun kamida nechta avtobus kerak?", "steps": [["1-qadam", "376 : 45 = 8 (qoldiq 16)"], ["2-qadam", "8 ta avtobus to'ladi, 16 ta o'quvchi qoladi."], ["3-qadam", "Qolganlar uchun yana 1 ta avtobus kerak: 8 + 1 = 9"], ["Xulosa", "To'g'ri javob: <b>9<\/b>."]], "note": "To'g'ri javob: <b>9<\/b>."}, {"n": 29, "options": ["1", "2", "3", "4"], "correct": 1, "mavzu": "Tekshirish", "premise": "Quyidagi fikrlarni ko'rib chiqing:", "ask": "Ulardan nechtasi to'g'ri?", "steps": [["1-fikr", "To'g'ri: 5 · 9 + 2 = 47 va 2 &lt; 5."], ["2-fikr", "Noto'g'ri: 5 · 3 + 8 = 23, lekin qoldiq 8 bo'luvchi 5 dan katta."], ["3-fikr", "Noto'g'ri: bo'luvchi 6 bo'lsa, qoldiq 6 ga teng bo'la olmaydi."], ["4-fikr", "To'g'ri: bu qoldiq qoidasi."], ["Xulosa", "To'g'ri javob: <b>2<\/b>."]], "note": "To'g'ri javob: <b>2<\/b>.", "statements": [{"speaker": "1-fikr", "text": "47 : 5 = 9 (qoldiq 2) to'g'ri"}, {"speaker": "2-fikr", "text": "23 : 5 = 3 (qoldiq 8) to'g'ri"}, {"speaker": "3-fikr", "text": "Bo'luvchi 6 bo'lsa, qoldiq 6 bo'lishi mumkin"}, {"speaker": "4-fikr", "text": "0 ≤ r < b"}]}, {"n": 30, "options": ["100", "107", "108", "99"], "correct": 1, "mavzu": "Eng katta va eng kichik bo'linuvchi", "premise": "Bo'luvchi 9, to'liqsiz bo'linma 11, qoldiq eng katta.", "ask": "Shu son nechaga teng?", "steps": [["1-qadam", "Eng katta qoldiq: 9 − 1 = 8"], ["2-qadam", "a = 9 · 11 + 8 = 99 + 8 = 107"], ["Xulosa", "To'g'ri javob: <b>107<\/b>."]], "note": "To'g'ri javob: <b>107<\/b>."}]};
+const MINI_TIMER_KEY="mini_timer_new_critical_pdf_" + TEST_CONFIG.title; let miniStart=Number(localStorage.getItem(MINI_TIMER_KEY)); if(!miniStart){miniStart=Date.now();localStorage.setItem(MINI_TIMER_KEY,String(miniStart));} function updateMiniTimer(){const x=Math.max(0,Math.floor((Date.now()-miniStart)/1000)),h=Math.floor(x/3600),m=Math.floor((x%3600)/60),s=x%60;const e=document.getElementById("miniTimer");if(e)e.textContent=[h,m,s].map(v=>String(v).padStart(2,"0")).join(":");} updateMiniTimer(); setInterval(updateMiniTimer,1000);;
+
+/* =====================================================================
+   ==================  BU YERDAN PASTGA TEGMANG (MOTOR)  ================
+   ===================================================================== */
+
+document.getElementById("pageTitle").textContent = TEST_CONFIG.title;
+document.getElementById("pageSubtitle").textContent = TEST_CONFIG.subtitle + " — " + TEST_CONFIG.questions.length + " ta savol";
+document.getElementById("pageAuthor").textContent = "Tuzuvchi: " + TEST_CONFIG.author;
+document.getElementById("authorResult").textContent = "Tuzuvchi: " + TEST_CONFIG.author;
+
+const QORDER_KEY = "test_qorder_" + TEST_CONFIG.title;
+function buildData(){
+  const src = TEST_CONFIG.questions;
+  let ord = null;
+  try{ ord = JSON.parse(localStorage.getItem(QORDER_KEY)); }catch(e){}
+  const valid = Array.isArray(ord) && ord.length === src.length && [...ord].sort((a,b)=>a-b).every((v,i)=>v===i);
+  if(!valid){
+    ord = src.map((_,i)=>i);
+    for(let i=ord.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [ord[i],ord[j]] = [ord[j],ord[i]]; }
+    localStorage.setItem(QORDER_KEY, JSON.stringify(ord));
+  }
+  return ord.map((k,pos)=>Object.assign({}, src[k], {n: pos+1}));
+}
+const data = buildData();
+const STORAGE_KEY = "test_progress_" + TEST_CONFIG.title;
+const LOCK_KEY = "test_locked_" + TEST_CONFIG.title;
+const SHUFFLE_KEY = "test_shuffle_" + TEST_CONFIG.title;
+const TIME_KEY = "test_starttime_" + TEST_CONFIG.title;
+const DURATION_KEY = "test_duration_" + TEST_CONFIG.title;
+
+function getStartTime(){
+  let t = localStorage.getItem(TIME_KEY);
+  if(!t){
+    t = Date.now().toString();
+    localStorage.setItem(TIME_KEY, t);
+  }
+  return parseInt(t, 10);
+}
+
+function formatDuration(ms){
+  const totalSec = Math.max(0, Math.floor(ms/1000));
+  const h = Math.floor(totalSec/3600);
+  const m = Math.floor((totalSec%3600)/60);
+  const s = totalSec%60;
+  const mm = (m<10?"0":"")+m;
+  const ss = (s<10?"0":"")+s;
+  if(h>0){
+    const hh = (h<10?"0":"")+h;
+    return hh+":"+mm+":"+ss;
+  }
+  return mm+":"+ss;
+}
+
+function generateShuffle(){
+  return data.map(item => {
+    const idx = item.options.map((_,i)=>i);
+    for(let i=idx.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [idx[i],idx[j]] = [idx[j],idx[i]];
+    }
+    return idx;
+  });
+}
+
+function loadShuffle(){
+  try{
+    const raw = localStorage.getItem(SHUFFLE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length === data.length) return parsed;
+    }
+  }catch(e){}
+  const fresh = generateShuffle();
+  localStorage.setItem(SHUFFLE_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+
+function getNext8AM(fromDate){
+  const d = new Date(fromDate);
+  d.setHours(8,0,0,0);
+  if(d <= fromDate) d.setDate(d.getDate()+1);
+  return d;
+}
+
+function isLocked(){
+  const raw = localStorage.getItem(LOCK_KEY);
+  if(!raw) return false;
+
+  let lockedAt;
+  if(raw === "true"){
+    // Eski formatdagi qulf — qачон qulflanganini bilmaymiz, shuning
+    // uchun xavfsiz tomondan xato qilib, darhol ochib yuboramiz
+    // (doimiy qulflanib qolishning oldini olish uchun).
+    localStorage.removeItem(LOCK_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SHUFFLE_KEY);localStorage.removeItem(QORDER_KEY);
+    localStorage.removeItem(TIME_KEY);
+    localStorage.removeItem(DURATION_KEY);
+    localStorage.removeItem(MINI_TIMER_KEY);
+    localStorage.removeItem("natija_yuborilgan_" + TEST_CONFIG.title);
+    return false;
+  }
+  try{
+    lockedAt = new Date(JSON.parse(raw).lockedAt);
+  }catch(e){
+    lockedAt = new Date();
+  }
+
+  const unlockAt = getNext8AM(lockedAt);
+  if(new Date() >= unlockAt){
+    // Vaqt keldi — avtomatik ochamiz va yangi kun uchun tozalaymiz.
+    localStorage.removeItem(LOCK_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SHUFFLE_KEY);localStorage.removeItem(QORDER_KEY);
+    localStorage.removeItem(TIME_KEY);
+    localStorage.removeItem(DURATION_KEY);
+    localStorage.removeItem(MINI_TIMER_KEY);
+    localStorage.removeItem("natija_yuborilgan_" + TEST_CONFIG.title);
+    return false;
+  }
+  return true;
+}
+
+function lockTest(){
+  localStorage.setItem(LOCK_KEY, JSON.stringify({ lockedAt: new Date().toISOString() }));
+}
+
+function lettersFor(n){
+  const arr = [];
+  for(let i=0;i<n;i++) arr.push(String.fromCharCode(65+i)); // A, B, C, ...
+  return arr;
+}
+
+// Holatni localStorage'dan tiklash (agar bo'lsa)
+let state = loadState();
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length === data.length) return parsed;
+    }
+  }catch(e){}
+  return data.map(()=>({selected:null, checked:false, correct:null}));
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let cur = 0;
+let shuffleOrder = loadShuffle();
+let testStartTime = getStartTime();
+
+function buildGrid(){
+  const g = document.getElementById("gridnav");
+  g.innerHTML = "";
+  data.forEach((item, i)=>{
+    const b = document.createElement("button");
+    b.textContent = item.n;
+    b.addEventListener("click", ()=>{ cur = i; render(); });
+    g.appendChild(b);
+  });
+  refreshGrid();
+}
+
+function refreshGrid(){
+  const g = document.getElementById("gridnav");
+  [...g.children].forEach((b,i)=>{
+    b.className = "";
+    const st = state[i];
+    if(st.checked){
+      b.classList.add(st.correct ? "correctQ" : "wrongQ");
+    } else if(st.selected !== null){
+      b.classList.add("answered");
+    }
+    if(i === cur) b.classList.add("current");
+  });
+  const answeredCount = state.filter(s=>s.checked).length;
+  document.getElementById("statAnswered").textContent = answeredCount + "/" + data.length;
+}
+
+function render(){
+  const item = data[cur];
+  const st = state[cur];
+  const letters = lettersFor(item.options.length);
+
+  document.getElementById("qbadge").textContent = item.n + "-savol";
+  const qtextEl = document.getElementById("qtext");
+  let qhtml = '<div class="premise">' + item.premise + '</div>';
+  (item.statements || []).forEach((st, i)=>{
+    qhtml += '<div class="speaker ' + (i % 2 === 0 ? 'speakerA' : 'speakerB') + '">' +
+      '<span class="speakerName">' + st.speaker + ':</span>' + st.text + '</div>';
+  });
+  qhtml += '<div class="ask">' + item.ask + '</div>';
+  qtextEl.innerHTML = qhtml;
+  document.getElementById("posLabel").textContent = (cur+1) + " / " + data.length;
+  document.getElementById("prevBtn").disabled = (cur === 0);
+  document.getElementById("nextBtn").disabled = (cur === data.length-1);
+
+  const imgWrap = document.getElementById("qimgWrap");
+  imgWrap.innerHTML = "";
+  if(item.img){
+    const img = document.createElement("img");
+    img.src = item.img;
+    img.addEventListener("click", ()=>{
+      document.getElementById("lightboxImg").src = item.img;
+      document.getElementById("lightbox").classList.add("open");
+      document.getElementById("lightboxHint").style.display = "block";
+    });
+    imgWrap.appendChild(img);
+  }
+
+  const answerArea = document.getElementById("answerArea");
+  answerArea.innerHTML = "";
+  const order = shuffleOrder[cur]; // aralashtirilgan asl indekslar ro'yxati
+  order.forEach((origIdx, displayIdx)=>{
+    const opt = item.options[origIdx];
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.innerHTML = "<b>" + letters[displayIdx] + ")</b> " + opt;
+    if(st.selected === origIdx) b.classList.add("selected");
+    if(st.checked){
+      if(origIdx === item.correct) b.classList.add("correctAns");
+      else if(origIdx === st.selected) b.classList.add("wrongAns");
+    }
+    b.addEventListener("click", ()=>{
+      if(st.checked) return; // tekshirilgandan keyin o'zgartirib bo'lmaydi
+      st.selected = origIdx;
+      saveState();
+      render();
+    });
+    answerArea.appendChild(b);
+  });
+
+  const checkBtn = document.getElementById("checkBtn");
+  checkBtn.disabled = (st.selected === null) || st.checked;
+  checkBtn.textContent = st.checked ? "Tekshirildi" : "Tekshirish";
+
+  const fb = document.getElementById("feedback");
+  const ew = document.getElementById("explainWrap");
+  if(st.checked){
+    fb.className = "feedback " + (st.correct ? "ok" : "bad");
+    fb.innerHTML = (st.correct ? "\u2705 To'g'ri! " : "\u274c Noto'g'ri. ") +
+      "To'g'ri javob: <b>" + letters[order.indexOf(item.correct)] + ") " + item.options[item.correct] + "</b>";
+
+    let html = "";
+    if(item.steps){
+      item.steps.forEach((s,i)=>{
+        html += '<div class="step"><div class="stepnum">'+(i+1)+'</div><div class="stepbody">' +
+          '<div class="lbl">'+s[0]+'</div><div class="eq">'+s[1]+'</div></div></div>';
+      });
+    }
+    if(item.note){
+      html += '<div class="finalnote">'+item.note+'</div>';
+    }
+    ew.innerHTML = html;
+  } else {
+    fb.className = "feedback";
+    fb.innerHTML = "";
+    ew.innerHTML = "";
+  }
+
+  refreshGrid();
+}
+
+function checkAnswer(){
+  const item = data[cur];
+  const st = state[cur];
+  if(st.selected === null || st.checked) return;
+  st.checked = true;
+  st.correct = (st.selected === item.correct);
+  saveState();
+  render();
+}
+
+function go(delta){
+  const n = cur + delta;
+  if(n < 0 || n >= data.length) return;
+  cur = n;
+  render();
+}
+
+document.getElementById("checkBtn").addEventListener("click", checkAnswer);
+document.getElementById("prevBtn").addEventListener("click", ()=>go(-1));
+document.getElementById("nextBtn").addEventListener("click", ()=>go(1));
+
+if(isLocked()){
+  showLockedScreen();
+} else {
+  buildGrid();
+  render();
+}
+
+/* ===================== Yakuniy natija ekrani ===================== */
+
+document.getElementById("finishBtn").addEventListener("click", ()=>{
+  const roziMi = confirm(
+    "Haqiqatan ham testni yakunlaysizmi?\n\n" +
+    "Diqqat: yakunlagandan so'ng testni QAYTA YECHIB BO'LMAYDI. " +
+    "Agar hali javob bermagan savollaringiz bo'lsa, avval ularni yeching."
+  );
+  if(!roziMi) return;
+  showResult();
+});
+
+function renderCategoryBreakdown(){
+  const catStats = {};
+  data.forEach((item, i) => {
+    const cat = item.mavzu || "Boshqa";
+    if(!catStats[cat]) catStats[cat] = {correct:0, total:0};
+    catStats[cat].total++;
+    if(state[i] && state[i].checked && state[i].correct) catStats[cat].correct++;
+  });
+  const catListEl = document.getElementById("catList");
+  const catBreakdownEl = document.getElementById("catBreakdown");
+  if(!catListEl || !catBreakdownEl) return;
+  catListEl.innerHTML = "";
+  const catEntries = Object.entries(catStats).sort((a,b)=> (a[1].correct/a[1].total) - (b[1].correct/b[1].total));
+  catEntries.forEach(([cat, s])=>{
+    const isGood = s.correct === s.total;
+    const row = document.createElement("div");
+    row.className = "catRow " + (isGood ? "good" : "weak");
+    row.innerHTML = "<span class=\"catName\">" + (isGood ? "\u2705" : "\u26a0\ufe0f") + " " + cat + "</span><span class=\"catScore\">" + s.correct + "/" + s.total + " to'g'ri</span>";
+    catListEl.appendChild(row);
+  });
+  catBreakdownEl.style.display = "block";
+}
+
+function showResult(){
+  const checkedCount = state.filter(s=>s.checked).length;
+  const correctCount = state.filter(s=>s.checked && s.correct).length;
+
+  if(checkedCount < data.length){
+    const qoldi = data.length - checkedCount;
+    const davomEt = confirm(
+      "Siz hali " + qoldi + " ta savolni tekshirmadingiz. " +
+      "Baribir yakunlab, natijani ko'rasizmi?"
+    );
+    if(!davomEt) return;
+  }
+
+  document.getElementById("quizArea").classList.add("hidden");
+  const rs = document.getElementById("resultScreen");
+  rs.classList.add("show");
+
+  document.getElementById("bigScore").textContent = correctCount + "/" + data.length;
+  const pct = Math.round((correctCount / data.length) * 100);
+  document.getElementById("pctScore").textContent = pct + "%";
+
+  const elapsedMs = Date.now() - testStartTime;
+  const vaqtStr = formatDuration(elapsedMs);
+  localStorage.setItem(DURATION_KEY, vaqtStr);
+  const timeNoteEl = document.getElementById("timeNote");
+  if(timeNoteEl) timeNoteEl.textContent = "Sarflangan vaqt: " + vaqtStr;
+  renderCategoryBreakdown();
+
+  const savedName = localStorage.getItem("oquvchi_ismi");
+  if(savedName) document.getElementById("nameInput").value = savedName;
+
+  // Natija ko'rilgan zahoti testni qulflaymiz — shu qurilmadan qayta topshirib
+  // bo'lmaydi (javoblarni ko'rib, qayta yechib 100% olishning oldini olish uchun).
+  lockTest();
+  document.getElementById("restartBtn").style.display = "none";
+  document.getElementById("lockedNote").style.display = "block";
+}
+
+function showLockedScreen(){
+  // Sahifa qayta ochilganda, agar test allaqachon yakunlangan bo'lsa,
+  // to'g'ridan-to'g'ri natija ekranini ko'rsatamiz va qayta yechishga yo'l qo'ymaymiz.
+  const correctCount = state.filter(s=>s.checked && s.correct).length;
+
+  document.getElementById("quizArea").classList.add("hidden");
+  document.getElementById("resultScreen").classList.add("show");
+  document.getElementById("bigScore").textContent = correctCount + "/" + data.length;
+  const pct = data.length ? Math.round((correctCount / data.length) * 100) : 0;
+  document.getElementById("pctScore").textContent = pct + "%";
+  const savedVaqt = localStorage.getItem(DURATION_KEY);
+  const timeNoteEl2 = document.getElementById("timeNote");
+  if(timeNoteEl2 && savedVaqt) timeNoteEl2.textContent = "Sarflangan vaqt: " + savedVaqt;
+  renderCategoryBreakdown();
+  document.getElementById("restartBtn").style.display = "none";
+  document.getElementById("lockedNote").style.display = "block";
+
+  const savedName = localStorage.getItem("oquvchi_ismi");
+  if(savedName) document.getElementById("nameInput").value = savedName;
+
+  if(localStorage.getItem("natija_yuborilgan_" + TEST_CONFIG.title) === "true"){
+    document.getElementById("sendResultBtn").disabled = true;
+    document.getElementById("sendStatus").textContent = "\u2705 Natija allaqachon yuborilgan.";
+    document.getElementById("sendStatus").style.color = "#1c7a33";
+    document.getElementById("resendZone").style.display = "block";
+  }
+}
+
+// O'qituvchi uchun qayta ochish: 1 marta bosilsa, kod so'raladi.
+document.getElementById("unlockTapZone").addEventListener("click", ()=>{
+  {
+    const kod = prompt("O'qituvchi kodi:");
+    if(kod === null) return;
+    if(kod === TEST_CONFIG.teacherUnlockCode){
+      const roziMi = confirm(
+        "Bu o'quvchiga testni QAYTA yechishga ruxsat berilsinmi?\n" +
+        "Avvalgi barcha javoblari tozalanadi."
+      );
+      if(roziMi){
+        localStorage.removeItem(LOCK_KEY);
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(SHUFFLE_KEY);localStorage.removeItem(QORDER_KEY);
+        localStorage.removeItem(TIME_KEY);
+        localStorage.removeItem(DURATION_KEY);
+        localStorage.removeItem(MINI_TIMER_KEY);
+        localStorage.removeItem("oquvchi_ismi");
+        localStorage.removeItem("natija_yuborilgan_" + TEST_CONFIG.title);
+        alert("Ochildi! Sahifa qayta yuklanadi.");
+        location.reload();
+      }
+    } else {
+      alert("Kod noto'g'ri.");
+    }
+  }
+});
+
+document.getElementById("resendLink").addEventListener("click", ()=>{
+  document.getElementById("sendResultBtn").disabled = false;
+  document.getElementById("sendStatus").textContent = "";
+  document.getElementById("resendZone").style.display = "none";
+});
+
+document.getElementById("restartBtn").addEventListener("click", ()=>{
+  const roziMi = confirm("Barcha javoblaringiz tozalanadi. Rozimisiz?");
+  if(!roziMi) return;
+  state = data.map(()=>({selected:null, checked:false, correct:null}));
+  saveState();
+
+  // Taymerlarni darhol, sahifa qayta yuklanishiga bog'liq bo'lmagan holda
+  // 00:00:00'ga qaytaramiz (miniStart va testStartTime shu skriptning
+  // umumiy o'zgaruvchilari, shuning uchun ularni to'g'ridan-to'g'ri
+  // yangilaymiz — bu reload ishlamay qolgan holatlarda ham ishlaydi).
+  localStorage.removeItem(MINI_TIMER_KEY);
+  localStorage.removeItem(TIME_KEY);
+  localStorage.removeItem(DURATION_KEY);
+  miniStart = Date.now();
+  localStorage.setItem(MINI_TIMER_KEY, String(miniStart));
+  updateMiniTimer();
+  testStartTime = getStartTime();
+
+  localStorage.removeItem(QORDER_KEY);
+  shuffleOrder = generateShuffle();
+  localStorage.setItem(SHUFFLE_KEY, JSON.stringify(shuffleOrder));
+  location.reload();
+  return;
+  cur = 0;
+  document.getElementById("resultScreen").classList.remove("show");
+  document.getElementById("quizArea").classList.remove("hidden");
+  document.getElementById("sendStatus").textContent = "";
+  render();
+});
+
+document.getElementById("sendResultBtn").addEventListener("click", ()=>{
+  const ism = document.getElementById("nameInput").value.trim();
+  const statusEl = document.getElementById("sendStatus");
+  if(!ism){
+    statusEl.textContent = "Iltimos, ismingizni kiriting.";
+    statusEl.style.color = "#c23c3c";
+    return;
+  }
+  localStorage.setItem("oquvchi_ismi", ism);
+
+  const correctCount = state.filter(s=>s.checked && s.correct).length;
+  const pct = Math.round((correctCount / data.length) * 100);
+  const vaqtStr = localStorage.getItem(DURATION_KEY) || formatDuration(Date.now() - testStartTime);
+  const ballMatni = correctCount + "/" + data.length + " (" + pct + "%) | " + vaqtStr;
+
+  statusEl.textContent = "Yuborilmoqda...";
+  statusEl.style.color = "#8a93a6";
+
+  const params = new URLSearchParams();
+  params.append(TEST_CONFIG.entryIsm, ism);
+  params.append(TEST_CONFIG.entryBall, ballMatni);
+  params.append(TEST_CONFIG.entryMavzu, TEST_CONFIG.title);
+
+  fetch(TEST_CONFIG.formUrl, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString()
+  }).then(()=>{
+    statusEl.textContent = "\u2705 Natija yuborildi!";
+    statusEl.style.color = "#1c7a33";
+    document.getElementById("sendResultBtn").disabled = true;
+    localStorage.setItem("natija_yuborilgan_" + TEST_CONFIG.title, "true");
+  }).catch(()=>{
+    statusEl.textContent = "\u26a0\ufe0f Yuborilmadi. Internetni tekshiring va qayta urining.";
+    statusEl.style.color = "#c23c3c";
+  });
+});
+</script>
+</body>
+</html>
