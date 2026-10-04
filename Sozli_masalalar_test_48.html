@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ko'paytirish: murakkab test (30 ta savol)</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:Georgia,'Times New Roman',serif;background:#fff;margin:0;padding:0;color:#1b2430;}
+  .wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px;}
+  #qimgWrap img{max-width:100%;border-radius:10px;cursor:zoom-in;transition:opacity .15s;}
+  #qimgWrap img:active{opacity:0.85;}
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(10,14,20,0.92);z-index:999;align-items:center;justify-content:center;padding:20px;}
+  .lightbox.open{display:flex;}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,0.5);}
+  .lightbox-hint{position:fixed;bottom:24px;left:0;right:0;text-align:center;color:#cfd6e0;font-family:Arial,sans-serif;font-size:13px;z-index:1000;}
+  h1{font-family:Arial,sans-serif;font-size:20px;color:#1a2a55;margin:6px 0 2px;}
+  .subtitle{font-family:Arial,sans-serif;color:#8a93a6;font-size:14px;margin-bottom:14px;}
+  .stats{font-family:Arial,sans-serif;color:#8a93a6;font-size:13px;display:flex;gap:18px;margin-bottom:14px;}
+  .stats b{color:#1b2430;}
+  .gridnav{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-bottom:22px;max-height:340px;overflow-y:auto;padding-right:4px;}
+  .gridnav button{font-family:Arial,sans-serif;border:1px solid #e3e6ee;background:#f7f8fb;color:#5b6474;border-radius:8px;padding:8px 0;font-size:12px;cursor:pointer;}
+  .gridnav button.current{background:#1a2a55;color:#fff;border-color:#1a2a55;}
+  .gridnav button.answered{background:#eef1fa;border-color:#b9c2de;color:#3a4358;}
+  .gridnav button.correctQ{background:#eaf7ec;border-color:#2fa84f;color:#1c7a33;font-weight:bold;}
+  .gridnav button.wrongQ{background:#fdecec;border-color:#e05252;color:#c23c3c;font-weight:bold;}
+  .gridnav button.correctQ.current,.gridnav button.wrongQ.current,.gridnav button.answered.current{background:#1a2a55;color:#fff;border-color:#1a2a55;}
+
+  .qbadge{display:inline-block;background:#1a2a55;color:#fff;font-family:Arial,sans-serif;font-size:14px;padding:8px 18px;border-radius:20px;margin-bottom:14px;}
+  .qtext{font-size:17px;line-height:1.55;margin-bottom:16px;color:#1b2430;}
+  .qtext .premise{background:#eef1fa;border-left:5px solid #1a2a55;border-radius:10px;padding:13px 15px;margin-bottom:14px;color:#1a2a55;font-weight:bold;}
+  .qtext .speaker{border-radius:10px;padding:12px 14px;margin:10px 0;font-family:Arial,sans-serif;font-size:15.5px;line-height:1.55;}
+  .qtext .speaker .speakerName{display:block;font-weight:bold;margin-bottom:4px;}
+  .qtext .speaker.speakerA{background:#fff4e6;border-left:5px solid #d9822b;color:#6e3d0c;}
+  .qtext .speaker.speakerB{background:#eaf7f7;border-left:5px solid #159a9c;color:#0b5556;}
+  .qtext .ask{background:#f0f3fb;border:1px solid #c7cde0;border-radius:10px;padding:12px 14px;margin-top:15px;color:#1a2a55;font-weight:bold;}
+
+  .opt{display:block;width:100%;text-align:left;font-family:Arial,sans-serif;font-size:15.5px;padding:14px 16px;margin-bottom:12px;border-radius:12px;border:1px solid #e3e6ee;background:#fff;cursor:pointer;color:#1b2430;}
+  .opt:hover{background:#f7f8fb;}
+  .opt.selected{border-color:#1a2a55;background:#eef1fa;}
+  .opt.correctAns{border:2px solid #2fa84f;background:#eafbee;color:#1c7a33;font-weight:bold;}
+  .opt.wrongAns{border:2px solid #e05252;background:#fdecec;color:#c23c3c;font-weight:bold;}
+
+  .checkbtn{font-family:Arial,sans-serif;background:#7e93c9;color:#fff;border:none;padding:14px 28px;border-radius:24px;font-size:16px;cursor:pointer;display:block;margin:6px 0 18px;}
+  .checkbtn:hover{background:#6c81b8;}
+  .checkbtn:disabled{opacity:.5;cursor:default;}
+
+  .feedback{font-family:Arial,sans-serif;padding:14px 16px;border-radius:12px;font-size:15px;margin-bottom:18px;border:1px solid;display:none;}
+  .feedback.ok{display:block;background:#eafbee;border-color:#2fa84f;color:#1c7a33;}
+  .feedback.bad{display:block;background:#fdecec;border-color:#e05252;color:#c23c3c;}
+
+  .step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+  .stepnum{flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:2px solid #1a2a55;color:#1a2a55;font-family:Arial,sans-serif;font-weight:bold;display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .stepbody{font-family:Arial,sans-serif;flex:1;}
+  .stepbody .lbl{font-size:12px;letter-spacing:.02em;color:#6b7386;text-transform:uppercase;margin-bottom:4px;font-weight:bold;}
+  .stepbody .eq{background:#f7f8fb;border:1px solid #e3e6ee;border-radius:10px;padding:11px 13px;font-size:15px;font-family:'Courier New',monospace;color:#1b2430;}
+  .finalnote{font-family:Arial,sans-serif;font-size:15px;color:#1a2a55;background:#f0f3fb;border-left:4px solid #1a2a55;padding:12px 14px;border-radius:6px;margin-top:6px;margin-bottom:20px;}
+
+  .navrow{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+  .navrow button{width:52px;height:52px;border-radius:50%;border:1px solid #c7cde0;background:#fff;font-size:20px;color:#1a2a55;cursor:pointer;}
+  .navrow button:disabled{opacity:.3;cursor:default;}
+  .navrow .pos{font-family:Arial,sans-serif;color:#5b6474;font-size:15px;}
+  .footerNote{font-family:Arial,sans-serif;color:#8a93a6;font-size:12.5px;text-align:center;margin-top:26px;line-height:1.5;}
+
+  .finishRow{margin-top:8px;margin-bottom:10px;}
+  .finishBtn{font-family:Arial,sans-serif;background:#1a2a55;color:#fff;border:none;padding:14px 24px;border-radius:24px;font-size:15px;cursor:pointer;width:100%;}
+  .finishBtn:hover{background:#12203f;}
+
+  /* Yakuniy natija ekrani */
+  .resultScreen{display:none;text-align:center;padding:30px 10px;}
+  .resultScreen.show{display:block;}
+  .resultScreen .bigscore{font-family:Arial,sans-serif;font-size:52px;font-weight:bold;color:#1a2a55;margin:10px 0 4px;}
+  .resultScreen .pct{font-family:Arial,sans-serif;font-size:20px;color:#5b6474;margin-bottom:24px;}
+  .resultScreen .nameRow{margin-bottom:20px;}
+  .resultScreen input{font-family:Arial,sans-serif;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #d3d8e6;width:80%;max-width:280px;}
+  .resultScreen .sendStatus{font-family:Arial,sans-serif;font-size:13px;color:#8a93a6;margin-top:10px;min-height:18px;}
+  .restartBtn{font-family:Arial,sans-serif;background:#eef1fa;color:#1a2a55;border:1px solid #c7cde0;padding:12px 22px;border-radius:20px;font-size:14px;cursor:pointer;margin-top:10px;}
+  #quizArea.hidden{display:none;}
+.catBreakdown{margin:14px 0 22px;text-align:left;max-width:340px;margin-left:auto;margin-right:auto;display:none;}
+  .catBreakdown .catTitle{font-family:Arial,sans-serif;font-size:12.5px;color:#8a93a6;text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.03em;}
+  .catRow{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-radius:10px;margin-bottom:6px;font-family:Arial,sans-serif;font-size:14px;}
+  .catRow.good{background:#eafbee;color:#1c7a33;}
+  .catRow.weak{background:#fdecec;color:#c23c3c;}
+  .catRow .catName{font-weight:500;}
+  .catRow .catScore{font-weight:bold;}
+  .catLegend{font-family:Arial,sans-serif;font-size:11.5px;color:#9aa1b5;text-align:center;margin-bottom:14px;line-height:1.5;}
+  .gridnav{max-height:340px;} #miniTimer::before{content:"⏱ ";font-size:.72em;opacity:.75;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============================================================= -->
+  <!--  BU YERGA TEGMANG — asosiy test qismi (motor).                 -->
+  <!--  Har yangi mavzu uchun faqat pastdagi TEST_CONFIG blokini      -->
+  <!--  o'zgartirasiz (fayl oxirida, <script> ichida).                -->
+  <!-- ============================================================= -->
+
+  <div id="quizArea">
+    <h1 id="pageTitle">Natural sonlarni ko'paytirish, Natural sonlarni bo'lish bo'yicha masalalar</h1>
+    <div class="subtitle" id="pageSubtitle"></div><div class="subtitle" id="pageAuthor" style="margin-top:-8px;color:#1a2a55;font-weight:bold;"></div><div id="miniTimer" style="display:inline-block;background:#eef1fa;color:#1a2a55;border-radius:9px;padding:5px 12px;margin:-5px 0 12px;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;letter-spacing:.04em;">00:00:00</div>
+    <div class="stats">Yechilgan: <b id="statAnswered">0/0</b></div>
+
+    <div class="gridnav" id="gridnav"></div>
+
+    <div class="qbadge" id="qbadge">1-savol</div>
+    <div class="qtext" id="qtext"></div>
+    <div id="qimgWrap"></div>
+
+    <div class="lightbox" id="lightbox" onclick="this.classList.remove('open');document.getElementById('lightboxHint').style.display='none';">
+      <img id="lightboxImg" src="" alt="kattalashtirilgan rasm">
+    </div>
+    <div class="lightbox-hint" id="lightboxHint" style="display:none;">Yopish uchun istalgan joyni bosing</div>
+
+    <div id="answerArea"></div>
+
+    <button class="checkbtn" id="checkBtn">Tekshirish</button>
+
+    <div class="feedback" id="feedback"></div>
+    <div id="explainWrap"></div>
+
+    <div class="navrow">
+      <button id="prevBtn">&larr;</button>
+      <div class="pos" id="posLabel">1 / 1</div>
+      <button id="nextBtn">&rarr;</button>
+    </div>
+
+    <div class="finishRow">
+      <button class="finishBtn" id="finishBtn">Testni yakunlash va natijani ko'rish</button>
+    </div>
+
+    <div class="footerNote">
+      Javobni tanlang &rarr; "Tekshirish" tugmasini bosing &rarr; yechim qadam-baqadam ochiladi
+    </div>
+  </div>
+
+  <!-- Yakuniy natija ekrani -->
+  <div class="resultScreen" id="resultScreen">
+    <h1>Test yakunlandi! 🎉</h1>
+    <div class="bigscore" id="bigScore">0/0</div>
+    <div class="pct" id="pctScore">0%</div>
+    <div class="pct" id="timeNote" style="font-size:13px;color:#9aa1b5;margin-top:-8px;margin-bottom:6px;"></div>
+    <div class="catBreakdown" id="catBreakdown">
+      <div class="catTitle">Mavzular bo'yicha natija</div>
+      <div class="catLegend">✅ hamma to'g'ri &nbsp;•&nbsp; ⚠️ xato bor &nbsp;•&nbsp; raqamlar: to'g'ri&nbsp;javob&nbsp;/&nbsp;jami&nbsp;savol</div>
+      <div id="catList"></div>
+    </div>
+
+    <div class="nameRow">
+      <input type="text" id="nameInput" placeholder="Ismingizni kiriting">
+      <div><button class="finishBtn" style="margin-top:12px;width:auto;padding:12px 24px;" id="sendResultBtn">Natijani yuborish</button></div>
+      <div class="sendStatus" id="sendStatus"></div>
+      <div id="resendZone" style="display:none;margin-top:6px;">
+        <span id="resendLink" style="font-family:Arial,sans-serif;font-size:12px;color:#8a93a6;text-decoration:underline;cursor:pointer;">Ishonchim komil emas, qayta yuborish</span>
+      </div>
+    </div>
+
+    <div class="footerNote" id="authorResult" style="margin-top:10px;font-weight:bold;color:#1a2a55;"></div>
+    <button class="restartBtn" id="restartBtn">Testni qaytadan boshlash</button>
+    <div class="footerNote" id="lockedNote" style="display:none;">
+      &#9989; Bu test yakunlandi va shu qurilmada qulflandi.<br>Ertalab soat 8:00 da avtomatik qayta ochiladi.
+    </div>
+    <!-- O'qituvchi uchun: shu matnni bosilsa, qayta ochish kodi so'raladi -->
+    <div id="unlockTapZone" style="text-align:center;margin-top:22px;">
+      <span style="font-family:Arial,sans-serif;font-size:12px;color:#c7cde0;cursor:pointer;border-bottom:1px dotted #c7cde0;padding-bottom:2px;">O'qituvchi uchun</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =====================================================================
+   ==========  FAQAT SHU YERDAN PASTINI HAR YANGI MAVZU UCHUN  ==========
+   ==========  O'ZGARTIRING. YUQORIDAGI HTML/CSS GA TEGMANG.   ==========
+   ===================================================================== */
+
+const TEST_CONFIG = {"title": "Natural sonlarni ko'paytirish, Natural sonlarni bo'lish bo'yicha masalalar", "subtitle": "3–4-sinflar uchun test", "author": "Fayziyev Azizbek", "formUrl": "https://docs.google.com/forms/d/e/1FAIpQLSfZUmdCVol5FGrqSlPj3ZrbBF5L48tVjzvLP_nGz9M3M3o_ag/formResponse", "entryIsm": "entry.650362337", "entryBall": "entry.1056081243", "entryMavzu": "entry.854585668", "teacherUnlockCode": "0000", "questions": [{"n": 1, "options": ["60 000 so'm", "3 020 so'm", "60 001 so'm", "59 999 so'm"], "correct": 0, "mavzu": "Ko'paytirish masalalari", "premise": "1 kg shirinlik 3 000 so'm turadi. 20 kg shirinlik qancha turadi?", "ask": "Javobni toping.", "steps": [["1-qadam", "3 000 · 20 = 60 000"], ["Xulosa", "To'g'ri javob: <b>60 000 so'm<\/b>."]], "note": "To'g'ri javob: <b>60 000 so'm<\/b>."}, {"n": 2, "options": ["4 m", "9 m", "5 m", "3 m"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "12 m ip 3 ta teng bo'lakka bo'lindi. Har bir bo'lak necha metr?", "ask": "Javobni toping.", "steps": [["1-qadam", "12 : 3 = 4"], ["Xulosa", "To'g'ri javob: <b>4 m<\/b>."]], "note": "To'g'ri javob: <b>4 m<\/b>."}, {"n": 3, "options": ["124 bet", "93 bet", "125 bet", "123 bet"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Nodira birinchi kuni kitobning 31 betini o'qidi. Ikkinchi kuni birinchi kundagidan 3 marta ko'p o'qidi. U ikki kunda necha bet o'qigan?", "ask": "Javobni toping.", "steps": [["1-qadam", "2-kun: 31 · 3 = 93"], ["2-qadam", "Jami: 31 + 93 = 124"], ["Xulosa", "To'g'ri javob: <b>124 bet<\/b>."]], "note": "To'g'ri javob: <b>124 bet<\/b>."}, {"n": 4, "options": ["132 km", "110 km", "133 km", "131 km"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Sayyoh birinchi kuni 22 km yurdi. Ikkinchi kuni birinchi kundagidan 2 marta ko'p, uchinchi kuni 3 marta ko'p yurdi. U uch kunda necha km yurgan?", "ask": "Javobni toping.", "steps": [["1-qadam", "2-kun: 22 · 2 = 44, 3-kun: 22 · 3 = 66"], ["2-qadam", "Jami: 22 + 44 + 66 = 132"], ["Xulosa", "To'g'ri javob: <b>132 km<\/b>."]], "note": "To'g'ri javob: <b>132 km<\/b>."}, {"n": 5, "options": ["613 ta", "614 ta", "612 ta", "623 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Birinchi stanok 1 minutda 14 ta, ikkinchisi 27 ta detal tayyorlaydi. Birinchi stanok 11 minut, ikkinchisi 17 minut ishlasa, jami nechta detal tayyorlanadi?", "ask": "Javobni toping.", "steps": [["1-qadam", "14 · 11 = 154"], ["2-qadam", "27 · 17 = 459"], ["3-qadam", "154 + 459 = 613"], ["Xulosa", "To'g'ri javob: <b>613 ta<\/b>."]], "note": "To'g'ri javob: <b>613 ta<\/b>."}, {"n": 6, "options": ["27 ta", "28 ta", "26 ta", "37 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Do'konga 96 ta televizor va undan 8 marta kam muzlatkich keltirildi. Hammasining chorak qismi sotildi. Nechta qurilma sotildi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Muzlatkich: 96 : 8 = 12"], ["2-qadam", "Jami: 96 + 12 = 108"], ["3-qadam", "Chorak qismi: 108 : 4 = 27"], ["Xulosa", "To'g'ri javob: <b>27 ta<\/b>."]], "note": "To'g'ri javob: <b>27 ta<\/b>."}, {"n": 7, "options": ["416 ta", "417 ta", "415 ta", "426 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Birinchi ishchi kuniga 58 ta, ikkinchisi undan 12 ta kam buyum tayyorlaydi. Ikkalasi 4 kunda nechta buyum tayyorlaydi?", "ask": "Javobni toping.", "steps": [["1-qadam", "2-ishchi: 58 − 12 = 46"], ["2-qadam", "Bir kunda: 58 + 46 = 104"], ["3-qadam", "4 kunda: 104 · 4 = 416"], ["Xulosa", "To'g'ri javob: <b>416 ta<\/b>."]], "note": "To'g'ri javob: <b>416 ta<\/b>."}, {"n": 8, "options": ["10 ta", "12 ta", "11 ta", "9 ta"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "Alisherning qalami 12 sm. Uzunligi 120 sm bo'lgan lenta qalam bilan o'lchansa, necha qalam chiqadi?", "ask": "Javobni toping.", "steps": [["1-qadam", "120 : 12 = 10"], ["Xulosa", "To'g'ri javob: <b>10 ta<\/b>."]], "note": "To'g'ri javob: <b>10 ta<\/b>."}, {"n": 9, "options": ["18 soat", "927 soat", "19 soat", "17 soat"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "Sardor kompyuterga soatiga 927 ta belgi kirita oladi. U 16 686 ta belgili matnni necha soatda kirita oladi?", "ask": "Javobni toping.", "steps": [["1-qadam", "16 686 : 927 = 18"], ["Xulosa", "To'g'ri javob: <b>18 soat<\/b>."]], "note": "To'g'ri javob: <b>18 soat<\/b>."}, {"n": 10, "options": ["1 400 ta", "1 401 ta", "1 399 ta", "1 410 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Zavodda 5 kunda 200 ta kosa va 500 ta piyola ishlab chiqarildi. Shunday unum bilan 10 kunda jami nechta kosa va piyola chiqariladi?", "ask": "Javobni toping.", "steps": [["1-qadam", "5 kunda jami: 200 + 500 = 700"], ["2-qadam", "Muddat 2 marta uzun: 700 · 2 = 1400"], ["Xulosa", "To'g'ri javob: <b>1 400 ta<\/b>."]], "note": "To'g'ri javob: <b>1 400 ta<\/b>."}, {"n": 11, "options": ["510 ta", "511 ta", "509 ta", "520 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Birinchi konveyerda 1 soatda 35 ta, ikkinchisida 50 ta mahsulot yig'iladi. Ikkalasida 6 soatda nechta mahsulot yig'iladi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Bir soatda: 35 + 50 = 85"], ["2-qadam", "6 soatda: 85 · 6 = 510"], ["Xulosa", "To'g'ri javob: <b>510 ta<\/b>."]], "note": "To'g'ri javob: <b>510 ta<\/b>."}, {"n": 12, "options": ["4 620 sm", "462 sm", "4 621 sm", "4 619 sm"], "correct": 0, "mavzu": "Ko'paytirish masalalari", "premise": "Qurbaqa bir sakrashda 60 sm masofaga sakraydi. U 77 marta sakrasa, necha sm masofani bosib o'tadi?", "ask": "Javobni toping.", "steps": [["1-qadam", "60 · 77 = 4 620"], ["Xulosa", "To'g'ri javob: <b>4 620 sm<\/b>."]], "note": "To'g'ri javob: <b>4 620 sm<\/b>."}, {"n": 13, "options": ["150 daqiqa", "120 daqiqa", "180 daqiqa", "151 daqiqa"], "correct": 0, "mavzu": "Vaqt va kattaliklar", "premise": "Sayohatga ertalab 9:00 da chiqib, kunduzi 11:30 da qaytildi. Sayohat necha daqiqa davom etgan?", "ask": "Javobni toping.", "steps": [["1-qadam", "2 soat = 120 daqiqa"], ["2-qadam", "120 + 30 = 150"], ["Xulosa", "To'g'ri javob: <b>150 daqiqa<\/b>."]], "note": "To'g'ri javob: <b>150 daqiqa<\/b>."}, {"n": 14, "options": ["248 ta", "249 ta", "247 ta", "258 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "8 qatorning har biriga 24 tadan pomidor ko'chati ekildi. Keyin har bir qatorga yana 7 tadan ko'chat ekildi. Jami nechta ko'chat ekilgan?", "ask": "Javobni toping.", "steps": [["1-qadam", "Bir qatorda: 24 + 7 = 31"], ["2-qadam", "8 qatorda: 8 · 31 = 248"], ["Xulosa", "To'g'ri javob: <b>248 ta<\/b>."]], "note": "To'g'ri javob: <b>248 ta<\/b>."}, {"n": 15, "options": ["28 ta", "29 ta", "27 ta", "38 ta"], "correct": 0, "mavzu": "Qoldiqli bo'lish masalalari", "premise": "Bitta ko'ylak tikishga 6 m mato ketadi. 172 m matodan nechta ko'ylak tikish mumkin?", "ask": "Javobni toping.", "steps": [["1-qadam", "172 : 6 = 28 (qoldiq 4)"], ["2-qadam", "Qoldiq bir ko'ylakka yetmaydi"], ["Xulosa", "To'g'ri javob: <b>28 ta<\/b>."]], "note": "To'g'ri javob: <b>28 ta<\/b>."}, {"n": 16, "options": ["50 g", "150 g", "51 g", "49 g"], "correct": 0, "mavzu": "Qoldiqli bo'lish masalalari", "premise": "Qutidagi 8 kg choy 150 g dan qadoqlandi. Necha gramm choy qadoqlanmay qoladi? (1 kg = 1 000 g)", "ask": "Javobni toping.", "steps": [["1-qadam", "8 kg = 8 000 g"], ["2-qadam", "8 000 : 150 = 53 (qoldiq 50)"], ["Xulosa", "To'g'ri javob: <b>50 g<\/b>."]], "note": "To'g'ri javob: <b>50 g<\/b>."}, {"n": 17, "options": ["14 ta", "15 ta", "13 ta", "24 ta"], "correct": 0, "mavzu": "Qoldiqli bo'lish masalalari", "premise": "Malikada 6 400 so'm bor. U bu pulga narxi 450 so'm bo'lgan muzqaymoqdan ko'pi bilan nechta sotib olishi mumkin?", "ask": "Javobni toping.", "steps": [["1-qadam", "6 400 : 450 = 14 (qoldiq 100)"], ["Xulosa", "To'g'ri javob: <b>14 ta<\/b>."]], "note": "To'g'ri javob: <b>14 ta<\/b>."}, {"n": 18, "options": ["18 ta", "17 ta", "19 ta", "28 ta"], "correct": 0, "mavzu": "Qoldiqli bo'lish masalalari", "premise": "885 t bug'doyni vagonlarga tashish kerak. Har bir vagonga 51 t sig'adi. Hammasini tashish uchun nechta vagon kerak?", "ask": "Javobni toping.", "steps": [["1-qadam", "885 : 51 = 17 (qoldiq 18)"], ["2-qadam", "Qoldiq uchun yana 1 vagon: 17 + 1 = 18"], ["Xulosa", "To'g'ri javob: <b>18 ta<\/b>."]], "note": "To'g'ri javob: <b>18 ta<\/b>."}, {"n": 19, "options": ["9 ta", "8 ta", "10 ta", "19 ta"], "correct": 0, "mavzu": "Qoldiqli bo'lish masalalari", "premise": "231 l sutni sig'imi 28 l bo'lgan bidonlarga quyish kerak. Nechta bidon kerak bo'ladi?", "ask": "Javobni toping.", "steps": [["1-qadam", "231 : 28 = 8 (qoldiq 7)"], ["2-qadam", "Qolgan sut uchun yana 1 bidon: 9"], ["Xulosa", "To'g'ri javob: <b>9 ta<\/b>."]], "note": "To'g'ri javob: <b>9 ta<\/b>."}, {"n": 20, "options": ["1 052 kg", "789 kg", "1 053 kg", "1 051 kg"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Bozorga 263 kg ko'k olma va undan 3 marta ko'p sariq olma keltirildi. Hammasi bo'lib necha kg olma keltirilgan?", "ask": "Javobni toping.", "steps": [["1-qadam", "Sariq olma: 263 · 3 = 789"], ["2-qadam", "Jami: 263 + 789 = 1052"], ["Xulosa", "To'g'ri javob: <b>1 052 kg<\/b>."]], "note": "To'g'ri javob: <b>1 052 kg<\/b>."}, {"n": 21, "options": ["567 kg", "568 kg", "566 kg", "577 kg"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Fermerning 4 ta oti va 9 ta sigiri bor. 1 ta ot uchun oyiga 81 kg yem, 3 ta sigir uchun ham shuncha yem kerak. Oyiga hammasiga necha kg yem sarflanadi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Otlarga: 4 · 81 = 324"], ["2-qadam", "Sigirlarga: 9 : 3 = 3 guruh, 3 · 81 = 243"], ["3-qadam", "Jami: 324 + 243 = 567"], ["Xulosa", "To'g'ri javob: <b>567 kg<\/b>."]], "note": "To'g'ri javob: <b>567 kg<\/b>."}, {"n": 22, "options": ["318 ta", "319 ta", "317 ta", "328 ta"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "Bosmaxonada 1290 ta kitob har bir bog'lamga 6 tadan, 824 ta daftar har bir bog'lamga 8 tadan joylandi. Jami nechta bog'lam tayyorlandi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Kitoblar: 1290 : 6 = 215"], ["2-qadam", "Daftarlar: 824 : 8 = 103"], ["3-qadam", "Jami: 215 + 103 = 318"], ["Xulosa", "To'g'ri javob: <b>318 ta<\/b>."]], "note": "To'g'ri javob: <b>318 ta<\/b>."}, {"n": 23, "options": ["16 marta", "8 marta", "17 marta", "15 marta"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "Poyezd 128 km, velosipedchi shu vaqtda 8 km yo'l yurdi. Poyezd velosipedchidan necha marta ko'p masofani bosib o'tgan?", "ask": "Javobni toping.", "steps": [["1-qadam", "128 : 8 = 16"], ["Xulosa", "To'g'ri javob: <b>16 marta<\/b>."]], "note": "To'g'ri javob: <b>16 marta<\/b>."}, {"n": 24, "options": ["240 kg", "120 kg", "241 kg", "239 kg"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Do'konga 480 kg shakar keltirilib, 2 kg dan paketlandi. Shu kuni 120 paket sotildi. Necha kg shakar qoldi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Paketlar: 480 : 2 = 240"], ["2-qadam", "Sotilgan: 120 · 2 = 240"], ["3-qadam", "Qoldi: 480 − 240 = 240"], ["Xulosa", "To'g'ri javob: <b>240 kg<\/b>."]], "note": "To'g'ri javob: <b>240 kg<\/b>."}, {"n": 25, "options": ["63 kg", "64 kg", "62 kg", "73 kg"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Omborga 30 yashikda uzum keltirildi. Har bir yashikda 7 kg dan uzum bor. Tushgacha 21 yashik sotildi. Sotish uchun necha kg uzum qoldi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Qolgan yashiklar: 30 − 21 = 9"], ["2-qadam", "9 · 7 = 63"], ["Xulosa", "To'g'ri javob: <b>63 kg<\/b>."]], "note": "To'g'ri javob: <b>63 kg<\/b>."}, {"n": 26, "options": ["693 ta", "694 ta", "692 ta", "703 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Do'konga 924 ta non keltirildi. Tushgacha keltirilgan nondan 4 marta kam, tushdan keyin qolgani sotildi. Tushdan keyin nechta non sotildi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Tushgacha: 924 : 4 = 231"], ["2-qadam", "Tushdan keyin: 924 − 231 = 693"], ["Xulosa", "To'g'ri javob: <b>693 ta<\/b>."]], "note": "To'g'ri javob: <b>693 ta<\/b>."}, {"n": 27, "options": ["99 kun", "100 kun", "98 kun", "109 kun"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "Kitob 792 betdan iborat. Har kuni 8 betdan o'qilsa, necha kunda tugaladi?", "ask": "Javobni toping.", "steps": [["1-qadam", "792 : 8 = 99"], ["Xulosa", "To'g'ri javob: <b>99 kun<\/b>."]], "note": "To'g'ri javob: <b>99 kun<\/b>."}, {"n": 28, "options": ["13 ta", "14 ta", "12 ta", "23 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Birinchi tovuqning 18 ta jo'jasi bor. Ikkinchisining undan 8 ta ko'p. Uchinchisining jo'jalari ikkinchisidagidan 2 marta kam. Uchinchi tovuqning nechta jo'jasi bor?", "ask": "Javobni toping.", "steps": [["1-qadam", "2-tovuq: 18 + 8 = 26"], ["2-qadam", "3-tovuq: 26 : 2 = 13"], ["Xulosa", "To'g'ri javob: <b>13 ta<\/b>."]], "note": "To'g'ri javob: <b>13 ta<\/b>."}, {"n": 29, "options": ["216 nafar", "217 nafar", "215 nafar", "226 nafar"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Xo'jalikda sabzavot yig'imida 162 nafar ishchi, poliz mahsulotlarida 3 marta kam ishchi ishladi. Hammasi bo'lib necha ishchi ishlagan?", "ask": "Javobni toping.", "steps": [["1-qadam", "Poliz: 162 : 3 = 54"], ["2-qadam", "Jami: 162 + 54 = 216"], ["Xulosa", "To'g'ri javob: <b>216 nafar<\/b>."]], "note": "To'g'ri javob: <b>216 nafar<\/b>."}, {"n": 30, "options": ["49 kg", "50 kg", "48 kg", "59 kg"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Bog'dan 86 kg olma, olmadan 2 marta kam nok, nokdan 6 kg kam anjir terildi. Olma anjirdan necha kg ko'p?", "ask": "Javobni toping.", "steps": [["1-qadam", "Nok: 86 : 2 = 43"], ["2-qadam", "Anjir: 43 − 6 = 37"], ["3-qadam", "86 − 37 = 49"], ["Xulosa", "To'g'ri javob: <b>49 kg<\/b>."]], "note": "To'g'ri javob: <b>49 kg<\/b>."}, {"n": 31, "options": ["60 ta", "61 ta", "59 ta", "70 ta"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "Bitta qalpoq tikish uchun 3 dm mato ketadi. 18 m matodan nechta qalpoq tikish mumkin? (1 m = 10 dm)", "ask": "Javobni toping.", "steps": [["1-qadam", "18 m = 180 dm"], ["2-qadam", "180 : 3 = 60"], ["Xulosa", "To'g'ri javob: <b>60 ta<\/b>."]], "note": "To'g'ri javob: <b>60 ta<\/b>."}, {"n": 32, "options": ["1 096 m", "1 097 m", "1 095 m", "1 106 m"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Ishchilar 3 kunda yo'l chetiga ko'chat o'tqazdi: 1-kuni 211 m, 2-kuni 397 m, 3-kuni ikkinchi kundagidan 91 m ko'p. Uch kunda jami necha metr yo'lga ko'chat o'tqazildi?", "ask": "Javobni toping.", "steps": [["1-qadam", "3-kun: 397 + 91 = 488"], ["2-qadam", "Jami: 211 + 397 + 488 = 1096"], ["Xulosa", "To'g'ri javob: <b>1 096 m<\/b>."]], "note": "To'g'ri javob: <b>1 096 m<\/b>.", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMTkwIiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIxOTAiIGZpbGw9IiNmZmZmZmYiLz48cmVjdCB4PSIzNy4zIiB5PSIzOCIgd2lkdGg9IjUuNCIgaGVpZ2h0PSIxNi4yIiBmaWxsPSIjOGE1YTJiIi8+PGNpcmNsZSBjeD0iNDAiIGN5PSIzNC40IiByPSIxMy41IiBmaWxsPSIjNGY5ZDRmIi8+PGNpcmNsZSBjeD0iMzEuOSIgY3k9IjM5LjgiIHI9IjkuOSIgZmlsbD0iIzVmYjM1ZiIvPjxjaXJjbGUgY3g9IjQ4LjEiIGN5PSIzOS44IiByPSI5LjkiIGZpbGw9IiM1ZmIzNWYiLz48cmVjdCB4PSIxNDIuMyIgeT0iNDQiIHdpZHRoPSI1LjQiIGhlaWdodD0iMTYuMiIgZmlsbD0iIzhhNWEyYiIvPjxjaXJjbGUgY3g9IjE0NSIgY3k9IjQwLjQiIHI9IjEzLjUiIGZpbGw9IiM0ZjlkNGYiLz48Y2lyY2xlIGN4PSIxMzYuOSIgY3k9IjQ1LjgiIHI9IjkuOSIgZmlsbD0iIzVmYjM1ZiIvPjxjaXJjbGUgY3g9IjE1My4xIiBjeT0iNDUuOCIgcj0iOS45IiBmaWxsPSIjNWZiMzVmIi8+PHJlY3QgeD0iMjI3LjMiIHk9IjM4IiB3aWR0aD0iNS40IiBoZWlnaHQ9IjE2LjIiIGZpbGw9IiM4YTVhMmIiLz48Y2lyY2xlIGN4PSIyMzAiIGN5PSIzNC40IiByPSIxMy41IiBmaWxsPSIjNGY5ZDRmIi8+PGNpcmNsZSBjeD0iMjIxLjkiIGN5PSIzOS44IiByPSI5LjkiIGZpbGw9IiM1ZmIzNWYiLz48Y2lyY2xlIGN4PSIyMzguMSIgY3k9IjM5LjgiIHI9IjkuOSIgZmlsbD0iIzVmYjM1ZiIvPjxyZWN0IHg9IjMzMi4zIiB5PSI0NCIgd2lkdGg9IjUuNCIgaGVpZ2h0PSIxNi4yIiBmaWxsPSIjOGE1YTJiIi8+PGNpcmNsZSBjeD0iMzM1IiBjeT0iNDAuNCIgcj0iMTMuNSIgZmlsbD0iIzRmOWQ0ZiIvPjxjaXJjbGUgY3g9IjMyNi45IiBjeT0iNDUuOCIgcj0iOS45IiBmaWxsPSIjNWZiMzVmIi8+PGNpcmNsZSBjeD0iMzQzLjEiIGN5PSI0NS44IiByPSI5LjkiIGZpbGw9IiM1ZmIzNWYiLz48cmVjdCB4PSI0MTcuMyIgeT0iMzgiIHdpZHRoPSI1LjQiIGhlaWdodD0iMTYuMiIgZmlsbD0iIzhhNWEyYiIvPjxjaXJjbGUgY3g9IjQyMCIgY3k9IjM0LjQiIHI9IjEzLjUiIGZpbGw9IiM0ZjlkNGYiLz48Y2lyY2xlIGN4PSI0MTEuOSIgY3k9IjM5LjgiIHI9IjkuOSIgZmlsbD0iIzVmYjM1ZiIvPjxjaXJjbGUgY3g9IjQyOC4xIiBjeT0iMzkuOCIgcj0iOS45IiBmaWxsPSIjNWZiMzVmIi8+PHJlY3QgeD0iNTIyLjMiIHk9IjQ0IiB3aWR0aD0iNS40IiBoZWlnaHQ9IjE2LjIiIGZpbGw9IiM4YTVhMmIiLz48Y2lyY2xlIGN4PSI1MjUiIGN5PSI0MC40IiByPSIxMy41IiBmaWxsPSIjNGY5ZDRmIi8+PGNpcmNsZSBjeD0iNTE2LjkiIGN5PSI0NS44IiByPSI5LjkiIGZpbGw9IiM1ZmIzNWYiLz48Y2lyY2xlIGN4PSI1MzMuMSIgY3k9IjQ1LjgiIHI9IjkuOSIgZmlsbD0iIzVmYjM1ZiIvPjxyZWN0IHg9IjIwIiB5PSIxMTAiIHdpZHRoPSIxMDcuODEwMjE4OTc4MTAyMTgiIGhlaWdodD0iMjYiIGZpbGw9IiMyZTg2YWEiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iNzMuOTA1MTA5NDg5MDUxMDkiIHk9IjEyOCIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPjEta3VuOiAyMTEgbTwvdGV4dD48cmVjdCB4PSIxMjcuODEwMjE4OTc4MTAyMTgiIHk9IjExMCIgd2lkdGg9IjIwMi44NDY3MTUzMjg0NjcxNiIgaGVpZ2h0PSIyNiIgZmlsbD0iIzNhOWQ1ZCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjIiLz48dGV4dCB4PSIyMjkuMjMzNTc2NjQyMzM1NzgiIHk9IjEyOCIgZm9udC1zaXplPSIxMiIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPjIta3VuOiAzOTcgbTwvdGV4dD48cmVjdCB4PSIzMzAuNjU2OTM0MzA2NTY5MyIgeT0iMTEwIiB3aWR0aD0iMjQ5LjM0MzA2NTY5MzQzMDY1IiBoZWlnaHQ9IjI2IiBmaWxsPSIjZDk4MjJiIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIvPjx0ZXh0IHg9IjQ1NS4zMjg0NjcxNTMyODQ2MyIgeT0iMTI4IiBmb250LXNpemU9IjEyIiBmaWxsPSIjZmZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+My1rdW46IDQ4OCBtPC90ZXh0Pjx0ZXh0IHg9IjMwMCIgeT0iMTY1IiBmb250LXNpemU9IjE0IiBmaWxsPSIjMWYzYTVmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+My1rdW46IGlra2luY2hpIGt1bmRhZ2lkYW4gOTEgbSBrbydwLiBKYW1pOiA/IG08L3RleHQ+PC9zdmc+"}, {"n": 33, "options": ["304 kg", "305 kg", "303 kg", "314 kg"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Dalaga 114 kg bug'doy, bug'doyga qaraganda 3 marta kam arpa ekildi. Bug'doy va arpa birgalikda necha kg bo'lsa, undan 2 marta ko'p jo'xori ekildi. Jo'xori necha kg ekildi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Arpa: 114 : 3 = 38"], ["2-qadam", "Birgalikda: 114 + 38 = 152"], ["3-qadam", "Jo'xori: 152 · 2 = 304"], ["Xulosa", "To'g'ri javob: <b>304 kg<\/b>."]], "note": "To'g'ri javob: <b>304 kg<\/b>."}, {"n": 34, "options": ["3 ta", "5 ta", "4 ta", "2 ta"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "Kutubxonaga birinchi kuni 5 bog'lamda 65 ta, ikkinchi kuni shunday bog'lamlarda 39 ta kitob olib kelindi. Ikkinchi kuni necha bog'lam olib kelingan?", "ask": "Javobni toping.", "steps": [["1-qadam", "Bir bog'lamda: 65 : 5 = 13"], ["2-qadam", "39 : 13 = 3"], ["Xulosa", "To'g'ri javob: <b>3 ta<\/b>."]], "note": "To'g'ri javob: <b>3 ta<\/b>."}, {"n": 35, "options": ["13 ta", "14 ta", "12 ta", "23 ta"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "21 m gazlamadan 7 ta bir xil sharf tikildi. 39 m gazlamadan nechta shunday sharf tikish mumkin?", "ask": "Javobni toping.", "steps": [["1-qadam", "Bitta sharfga: 21 : 7 = 3 m"], ["2-qadam", "39 : 3 = 13"], ["Xulosa", "To'g'ri javob: <b>13 ta<\/b>."]], "note": "To'g'ri javob: <b>13 ta<\/b>."}, {"n": 36, "options": ["18 sm", "4 sm", "19 sm", "17 sm"], "correct": 0, "mavzu": "Vaqt va kattaliklar", "premise": "Birinchi tasma 24 sm, ikkinchisi 6 sm. Birinchi tasma ikkinchisidan necha santimetr uzun?", "ask": "Javobni toping.", "steps": [["1-qadam", "24 − 6 = 18"], ["Xulosa", "To'g'ri javob: <b>18 sm<\/b>."]], "note": "To'g'ri javob: <b>18 sm<\/b>."}, {"n": 37, "options": ["72 kg", "73 kg", "71 kg", "82 kg"], "correct": 0, "mavzu": "Ko'paytirish masalalari", "premise": "Qishda bitta sigirga bir kunda 6 kg yem beriladi. 6 kunda 2 ta sigirga necha kg yem kerak?", "ask": "Javobni toping.", "steps": [["1-qadam", "Bitta sigirga 6 kunda: 6 · 6 = 36"], ["2-qadam", "2 ta sigirga: 36 · 2 = 72"], ["Xulosa", "To'g'ri javob: <b>72 kg<\/b>."]], "note": "To'g'ri javob: <b>72 kg<\/b>."}, {"n": 38, "options": ["68 kg", "612 kg", "69 kg", "67 kg"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "Dalaga 204 kg bug'doy, undan 3 marta kam arpa ekildi. Necha kg arpa ekilgan?", "ask": "Javobni toping.", "steps": [["1-qadam", "204 : 3 = 68"], ["Xulosa", "To'g'ri javob: <b>68 kg<\/b>."]], "note": "To'g'ri javob: <b>68 kg<\/b>."}, {"n": 39, "options": ["2 107 m", "308 m", "2 108 m", "2 106 m"], "correct": 0, "mavzu": "Ko'paytirish masalalari", "premise": "Tovush havoda 1 sekundda 301 m masofaga tarqaladi. 7 sekundda necha metr masofaga tarqaladi?", "ask": "Javobni toping.", "steps": [["1-qadam", "301 · 7 = 2 107"], ["Xulosa", "To'g'ri javob: <b>2 107 m<\/b>."]], "note": "To'g'ri javob: <b>2 107 m<\/b>."}, {"n": 40, "options": ["3 soat", "4 soat", "2 soat", "13 soat"], "correct": 0, "mavzu": "Tenglama bilan masalalar", "premise": "Traktor bakida 58 l yonilg'i bor edi. U bir soatda 4 l sarflaydi. Bakda 46 l qolgan bo'lsa, traktor necha soat ishlagan?", "ask": "Javobni toping.", "steps": [["1-qadam", "Sarflangan: 58 − 46 = 12"], ["2-qadam", "12 : 4 = 3"], ["Xulosa", "To'g'ri javob: <b>3 soat<\/b>."]], "note": "To'g'ri javob: <b>3 soat<\/b>."}, {"n": 41, "options": ["808 ta", "809 ta", "807 ta", "818 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Quruvchilar 1 858 ta xonadonni qurib topshirdi. Bir xonalilar 150 ta, ikki xonalilar bir xonalilardan 6 marta ko'p, qolganlari uch xonali. Uch xonali xonadonlar nechta?", "ask": "Javobni toping.", "steps": [["1-qadam", "Ikki xonali: 150 · 6 = 900"], ["2-qadam", "Bir va ikki xonali: 150 + 900 = 1050"], ["3-qadam", "Uch xonali: 1 858 − 1050 = 808"], ["Xulosa", "To'g'ri javob: <b>808 ta<\/b>."]], "note": "To'g'ri javob: <b>808 ta<\/b>."}, {"n": 42, "options": ["120 l", "121 l", "119 l", "130 l"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Bitta traktor uchun bir kunga 26 l yonilg'i ajratiladi. Bir kunda 20 l sarflansa, 20 kunda qancha yonilg'i tejaladi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Bir kunda tejaladi: 26 − 20 = 6"], ["2-qadam", "20 kunda: 6 · 20 = 120"], ["Xulosa", "To'g'ri javob: <b>120 l<\/b>."]], "note": "To'g'ri javob: <b>120 l<\/b>."}, {"n": 43, "options": ["504 ta", "505 ta", "503 ta", "514 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Reja bo'yicha fabrika 480 ta palto tikishi kerak edi. Ishchilar kuniga rejadagidan 2 ta ortiq tikib, 12 kunda rejani bajardilar. 12 kunda fabrikada nechta palto tikilgan?", "ask": "Javobni toping.", "steps": [["1-qadam", "Ortiqcha: 2 · 12 = 24"], ["2-qadam", "Jami: 480 + 24 = 504"], ["Xulosa", "To'g'ri javob: <b>504 ta<\/b>."]], "note": "To'g'ri javob: <b>504 ta<\/b>."}, {"n": 44, "options": ["45 kg", "46 kg", "44 kg", "55 kg"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Bekasi tushlikkacha 5 chelak, tushdan keyin 4 chelak pomidor terdi. Hammasi 81 kg chiqdi. Tushlikkacha necha kg pomidor terilgan?", "ask": "Javobni toping.", "steps": [["1-qadam", "Chelaklar: 5 + 4 = 9"], ["2-qadam", "Bitta chelakda: 81 : 9 = 9"], ["3-qadam", "Tushlikkacha: 9 · 5 = 45"], ["Xulosa", "To'g'ri javob: <b>45 kg<\/b>."]], "note": "To'g'ri javob: <b>45 kg<\/b>."}, {"n": 45, "options": ["213 ta", "214 ta", "212 ta", "223 ta"], "correct": 0, "mavzu": "Ko'p amalli masalalar", "premise": "Kitob javonining 4 ta tokchasiga 30 tadan, 3 ta tokchasiga 31 tadan kitob qo'yilgan. Javonda hammasi bo'lib nechta kitob bor?", "ask": "Javobni toping.", "steps": [["1-qadam", "4 · 30 = 120"], ["2-qadam", "3 · 31 = 93"], ["3-qadam", "120 + 93 = 213"], ["Xulosa", "To'g'ri javob: <b>213 ta<\/b>."]], "note": "To'g'ri javob: <b>213 ta<\/b>."}, {"n": 46, "options": ["18 ta", "19 ta", "17 ta", "28 ta"], "correct": 0, "mavzu": "Bo'lish masalalari", "premise": "Mehnat darsi uchun 720 so'mga har bir varag'i 90 so'mdan oq qog'oz va 1000 so'mga har bir varag'i 100 so'mdan rangli qog'oz olindi. Jami nechta varaq qog'oz olindi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Oq qog'oz: 720 : 90 = 8"], ["2-qadam", "Rangli qog'oz: 1000 : 100 = 10"], ["3-qadam", "Jami: 8 + 10 = 18"], ["Xulosa", "To'g'ri javob: <b>18 ta<\/b>."]], "note": "To'g'ri javob: <b>18 ta<\/b>."}, {"n": 47, "options": ["248", "1 984", "249", "247"], "correct": 0, "mavzu": "Tenglama bilan masalalar", "premise": "Noma'lum son 8 marta orttirilsa, 1 984 hosil bo'ladi. Noma'lum sonni toping.", "ask": "Javobni toping.", "steps": [["1-qadam", "x · 8 = 1 984"], ["2-qadam", "x = 1 984 : 8 = 248"], ["Xulosa", "To'g'ri javob: <b>248<\/b>."]], "note": "To'g'ri javob: <b>248<\/b>."}, {"n": 48, "options": ["800 so'm", "2 400 so'm", "801 so'm", "799 so'm"], "correct": 0, "mavzu": "Tenglama bilan masalalar", "premise": "Aziz 2 banka, Bobur 5 banka murabbo sotib oldi. Bobur Azizdan 2 400 so'm ko'p pul to'ladi. 1 banka murabbo necha so'm turadi?", "ask": "Javobni toping.", "steps": [["1-qadam", "Bankalar farqi: 5 − 2 = 3"], ["2-qadam", "2 400 : 3 = 800"], ["Xulosa", "To'g'ri javob: <b>800 so'm<\/b>."]], "note": "To'g'ri javob: <b>800 so'm<\/b>.", "img": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMjYwIiBmb250LWZhbWlseT0iQXJpYWwsc2Fucy1zZXJpZiI+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSIyNjAiIGZpbGw9IiNmZmZmZmYiLz48dGV4dCB4PSIyMCIgeT0iMjgiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMxZjNhNWYiIGZvbnQtd2VpZ2h0PSJib2xkIj5Beml6PC90ZXh0PjxyZWN0IHg9IjI4IiB5PSI0MCIgd2lkdGg9IjM0IiBoZWlnaHQ9IjEwIiByeD0iMyIgZmlsbD0iI2M5OGE0YiIvPjxwYXRoIGQ9Ik0yNCA1MiBRMTYgODAgMjggMTAyIFE0NSAxMTIgNjIgMTAyIFE3NCA4MCA2NiA1MiBaIiBmaWxsPSIjZmZmNGUwIiBzdHJva2U9IiNkOTgyMmIiIHN0cm9rZS13aWR0aD0iMiIvPjxjaXJjbGUgY3g9IjQ1IiBjeT0iODQiIHI9IjEzIiBmaWxsPSIjZDk0NDJlIi8+PHJlY3QgeD0iNDMiIHk9IjY2IiB3aWR0aD0iMyIgaGVpZ2h0PSI4IiBmaWxsPSIjNGY3YTJhIi8+PHJlY3QgeD0iODgiIHk9IjQwIiB3aWR0aD0iMzQiIGhlaWdodD0iMTAiIHJ4PSIzIiBmaWxsPSIjYzk4YTRiIi8+PHBhdGggZD0iTTg0IDUyIFE3NiA4MCA4OCAxMDIgUTEwNSAxMTIgMTIyIDEwMiBRMTM0IDgwIDEyNiA1MiBaIiBmaWxsPSIjZmZmNGUwIiBzdHJva2U9IiNkOTgyMmIiIHN0cm9rZS13aWR0aD0iMiIvPjxjaXJjbGUgY3g9IjEwNSIgY3k9Ijg0IiByPSIxMyIgZmlsbD0iI2Q5NDQyZSIvPjxyZWN0IHg9IjEwMyIgeT0iNjYiIHdpZHRoPSIzIiBoZWlnaHQ9IjgiIGZpbGw9IiM0ZjdhMmEiLz48dGV4dCB4PSIyMCIgeT0iMTQ4IiBmb250LXNpemU9IjE1IiBmaWxsPSIjMWYzYTVmIiBmb250LXdlaWdodD0iYm9sZCI+Qm9idXI8L3RleHQ+PHJlY3QgeD0iMjgiIHk9IjE2MCIgd2lkdGg9IjM0IiBoZWlnaHQ9IjEwIiByeD0iMyIgZmlsbD0iI2M5OGE0YiIvPjxwYXRoIGQ9Ik0yNCAxNzIgUTE2IDIwMCAyOCAyMjIgUTQ1IDIzMiA2MiAyMjIgUTc0IDIwMCA2NiAxNzIgWiIgZmlsbD0iI2ZmZjRlMCIgc3Ryb2tlPSIjZDk4MjJiIiBzdHJva2Utd2lkdGg9IjIiLz48Y2lyY2xlIGN4PSI0NSIgY3k9IjIwNCIgcj0iMTMiIGZpbGw9IiNkOTQ0MmUiLz48cmVjdCB4PSI0MyIgeT0iMTg2IiB3aWR0aD0iMyIgaGVpZ2h0PSI4IiBmaWxsPSIjNGY3YTJhIi8+PHJlY3QgeD0iODgiIHk9IjE2MCIgd2lkdGg9IjM0IiBoZWlnaHQ9IjEwIiByeD0iMyIgZmlsbD0iI2M5OGE0YiIvPjxwYXRoIGQ9Ik04NCAxNzIgUTc2IDIwMCA4OCAyMjIgUTEwNSAyMzIgMTIyIDIyMiBRMTM0IDIwMCAxMjYgMTcyIFoiIGZpbGw9IiNmZmY0ZTAiIHN0cm9rZT0iI2Q5ODIyYiIgc3Ryb2tlLXdpZHRoPSIyIi8+PGNpcmNsZSBjeD0iMTA1IiBjeT0iMjA0IiByPSIxMyIgZmlsbD0iI2Q5NDQyZSIvPjxyZWN0IHg9IjEwMyIgeT0iMTg2IiB3aWR0aD0iMyIgaGVpZ2h0PSI4IiBmaWxsPSIjNGY3YTJhIi8+PHJlY3QgeD0iMTQ4IiB5PSIxNjAiIHdpZHRoPSIzNCIgaGVpZ2h0PSIxMCIgcng9IjMiIGZpbGw9IiNjOThhNGIiLz48cGF0aCBkPSJNMTQ0IDE3MiBRMTM2IDIwMCAxNDggMjIyIFExNjUgMjMyIDE4MiAyMjIgUTE5NCAyMDAgMTg2IDE3MiBaIiBmaWxsPSIjZmZmNGUwIiBzdHJva2U9IiNjMDUwMmQiIHN0cm9rZS13aWR0aD0iMyIvPjxjaXJjbGUgY3g9IjE2NSIgY3k9IjIwNCIgcj0iMTMiIGZpbGw9IiNkOTQ0MmUiLz48cmVjdCB4PSIxNjMiIHk9IjE4NiIgd2lkdGg9IjMiIGhlaWdodD0iOCIgZmlsbD0iIzRmN2EyYSIvPjxyZWN0IHg9IjIwOCIgeT0iMTYwIiB3aWR0aD0iMzQiIGhlaWdodD0iMTAiIHJ4PSIzIiBmaWxsPSIjYzk4YTRiIi8+PHBhdGggZD0iTTIwNCAxNzIgUTE5NiAyMDAgMjA4IDIyMiBRMjI1IDIzMiAyNDIgMjIyIFEyNTQgMjAwIDI0NiAxNzIgWiIgZmlsbD0iI2ZmZjRlMCIgc3Ryb2tlPSIjYzA1MDJkIiBzdHJva2Utd2lkdGg9IjMiLz48Y2lyY2xlIGN4PSIyMjUiIGN5PSIyMDQiIHI9IjEzIiBmaWxsPSIjZDk0NDJlIi8+PHJlY3QgeD0iMjIzIiB5PSIxODYiIHdpZHRoPSIzIiBoZWlnaHQ9IjgiIGZpbGw9IiM0ZjdhMmEiLz48cmVjdCB4PSIyNjgiIHk9IjE2MCIgd2lkdGg9IjM0IiBoZWlnaHQ9IjEwIiByeD0iMyIgZmlsbD0iI2M5OGE0YiIvPjxwYXRoIGQ9Ik0yNjQgMTcyIFEyNTYgMjAwIDI2OCAyMjIgUTI4NSAyMzIgMzAyIDIyMiBRMzE0IDIwMCAzMDYgMTcyIFoiIGZpbGw9IiNmZmY0ZTAiIHN0cm9rZT0iI2MwNTAyZCIgc3Ryb2tlLXdpZHRoPSIzIi8+PGNpcmNsZSBjeD0iMjg1IiBjeT0iMjA0IiByPSIxMyIgZmlsbD0iI2Q5NDQyZSIvPjxyZWN0IHg9IjI4MyIgeT0iMTg2IiB3aWR0aD0iMyIgaGVpZ2h0PSI4IiBmaWxsPSIjNGY3YTJhIi8+PHBhdGggZD0iTTE0MCAxNTAgTDE0MCAxNDMgTDMxMCAxNDMgTDMxMCAxNTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2MwNTAyZCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHRleHQgeD0iMjI1LjAiIHk9IjEzNiIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2MwNTAyZCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC13ZWlnaHQ9ImJvbGQiPjIgNDAwIHNvJ20gKGZhcnEpPC90ZXh0Pjwvc3ZnPg=="}]};
+const MINI_TIMER_KEY="mini_timer_new_critical_pdf_" + TEST_CONFIG.title; let miniStart=Number(localStorage.getItem(MINI_TIMER_KEY)); if(!miniStart){miniStart=Date.now();localStorage.setItem(MINI_TIMER_KEY,String(miniStart));} function updateMiniTimer(){const x=Math.max(0,Math.floor((Date.now()-miniStart)/1000)),h=Math.floor(x/3600),m=Math.floor((x%3600)/60),s=x%60;const e=document.getElementById("miniTimer");if(e)e.textContent=[h,m,s].map(v=>String(v).padStart(2,"0")).join(":");} updateMiniTimer(); setInterval(updateMiniTimer,1000);;
+
+/* =====================================================================
+   ==================  BU YERDAN PASTGA TEGMANG (MOTOR)  ================
+   ===================================================================== */
+
+document.getElementById("pageTitle").textContent = TEST_CONFIG.title;
+document.getElementById("pageSubtitle").textContent = TEST_CONFIG.subtitle + " — " + TEST_CONFIG.questions.length + " ta savol";
+document.getElementById("pageAuthor").textContent = "Tuzuvchi: " + TEST_CONFIG.author;
+document.getElementById("authorResult").textContent = "Tuzuvchi: " + TEST_CONFIG.author;
+
+const QORDER_KEY = "test_qorder_" + TEST_CONFIG.title;
+function buildData(){
+  const src = TEST_CONFIG.questions;
+  let ord = null;
+  try{ ord = JSON.parse(localStorage.getItem(QORDER_KEY)); }catch(e){}
+  const valid = Array.isArray(ord) && ord.length === src.length && [...ord].sort((a,b)=>a-b).every((v,i)=>v===i);
+  if(!valid){
+    ord = src.map((_,i)=>i);
+    for(let i=ord.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [ord[i],ord[j]] = [ord[j],ord[i]]; }
+    localStorage.setItem(QORDER_KEY, JSON.stringify(ord));
+  }
+  return ord.map((k,pos)=>Object.assign({}, src[k], {n: pos+1}));
+}
+const data = buildData();
+const STORAGE_KEY = "test_progress_" + TEST_CONFIG.title;
+const LOCK_KEY = "test_locked_" + TEST_CONFIG.title;
+const SHUFFLE_KEY = "test_shuffle_" + TEST_CONFIG.title;
+const TIME_KEY = "test_starttime_" + TEST_CONFIG.title;
+const DURATION_KEY = "test_duration_" + TEST_CONFIG.title;
+
+function getStartTime(){
+  let t = localStorage.getItem(TIME_KEY);
+  if(!t){
+    t = Date.now().toString();
+    localStorage.setItem(TIME_KEY, t);
+  }
+  return parseInt(t, 10);
+}
+
+function formatDuration(ms){
+  const totalSec = Math.max(0, Math.floor(ms/1000));
+  const h = Math.floor(totalSec/3600);
+  const m = Math.floor((totalSec%3600)/60);
+  const s = totalSec%60;
+  const mm = (m<10?"0":"")+m;
+  const ss = (s<10?"0":"")+s;
+  if(h>0){
+    const hh = (h<10?"0":"")+h;
+    return hh+":"+mm+":"+ss;
+  }
+  return mm+":"+ss;
+}
+
+function generateShuffle(){
+  return data.map(item => {
+    const idx = item.options.map((_,i)=>i);
+    for(let i=idx.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [idx[i],idx[j]] = [idx[j],idx[i]];
+    }
+    return idx;
+  });
+}
+
+function loadShuffle(){
+  try{
+    const raw = localStorage.getItem(SHUFFLE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length === data.length) return parsed;
+    }
+  }catch(e){}
+  const fresh = generateShuffle();
+  localStorage.setItem(SHUFFLE_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+
+function getNext8AM(fromDate){
+  const d = new Date(fromDate);
+  d.setHours(8,0,0,0);
+  if(d <= fromDate) d.setDate(d.getDate()+1);
+  return d;
+}
+
+function isLocked(){
+  const raw = localStorage.getItem(LOCK_KEY);
+  if(!raw) return false;
+
+  let lockedAt;
+  if(raw === "true"){
+    // Eski formatdagi qulf — qачон qulflanganini bilmaymiz, shuning
+    // uchun xavfsiz tomondan xato qilib, darhol ochib yuboramiz
+    // (doimiy qulflanib qolishning oldini olish uchun).
+    localStorage.removeItem(LOCK_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SHUFFLE_KEY);localStorage.removeItem(QORDER_KEY);
+    localStorage.removeItem(TIME_KEY);
+    localStorage.removeItem(DURATION_KEY);
+    localStorage.removeItem(MINI_TIMER_KEY);
+    localStorage.removeItem("natija_yuborilgan_" + TEST_CONFIG.title);
+    return false;
+  }
+  try{
+    lockedAt = new Date(JSON.parse(raw).lockedAt);
+  }catch(e){
+    lockedAt = new Date();
+  }
+
+  const unlockAt = getNext8AM(lockedAt);
+  if(new Date() >= unlockAt){
+    // Vaqt keldi — avtomatik ochamiz va yangi kun uchun tozalaymiz.
+    localStorage.removeItem(LOCK_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SHUFFLE_KEY);localStorage.removeItem(QORDER_KEY);
+    localStorage.removeItem(TIME_KEY);
+    localStorage.removeItem(DURATION_KEY);
+    localStorage.removeItem(MINI_TIMER_KEY);
+    localStorage.removeItem("natija_yuborilgan_" + TEST_CONFIG.title);
+    return false;
+  }
+  return true;
+}
+
+function lockTest(){
+  localStorage.setItem(LOCK_KEY, JSON.stringify({ lockedAt: new Date().toISOString() }));
+}
+
+function lettersFor(n){
+  const arr = [];
+  for(let i=0;i<n;i++) arr.push(String.fromCharCode(65+i)); // A, B, C, ...
+  return arr;
+}
+
+// Holatni localStorage'dan tiklash (agar bo'lsa)
+let state = loadState();
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length === data.length) return parsed;
+    }
+  }catch(e){}
+  return data.map(()=>({selected:null, checked:false, correct:null}));
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let cur = 0;
+let shuffleOrder = loadShuffle();
+let testStartTime = getStartTime();
+
+function buildGrid(){
+  const g = document.getElementById("gridnav");
+  g.innerHTML = "";
+  data.forEach((item, i)=>{
+    const b = document.createElement("button");
+    b.textContent = item.n;
+    b.addEventListener("click", ()=>{ cur = i; render(); });
+    g.appendChild(b);
+  });
+  refreshGrid();
+}
+
+function refreshGrid(){
+  const g = document.getElementById("gridnav");
+  [...g.children].forEach((b,i)=>{
+    b.className = "";
+    const st = state[i];
+    if(st.checked){
+      b.classList.add(st.correct ? "correctQ" : "wrongQ");
+    } else if(st.selected !== null){
+      b.classList.add("answered");
+    }
+    if(i === cur) b.classList.add("current");
+  });
+  const answeredCount = state.filter(s=>s.checked).length;
+  document.getElementById("statAnswered").textContent = answeredCount + "/" + data.length;
+}
+
+function render(){
+  const item = data[cur];
+  const st = state[cur];
+  const letters = lettersFor(item.options.length);
+
+  document.getElementById("qbadge").textContent = item.n + "-savol";
+  const qtextEl = document.getElementById("qtext");
+  let qhtml = '<div class="premise">' + item.premise + '</div>';
+  (item.statements || []).forEach((st, i)=>{
+    qhtml += '<div class="speaker ' + (i % 2 === 0 ? 'speakerA' : 'speakerB') + '">' +
+      '<span class="speakerName">' + st.speaker + ':</span>' + st.text + '</div>';
+  });
+  qhtml += '<div class="ask">' + item.ask + '</div>';
+  qtextEl.innerHTML = qhtml;
+  document.getElementById("posLabel").textContent = (cur+1) + " / " + data.length;
+  document.getElementById("prevBtn").disabled = (cur === 0);
+  document.getElementById("nextBtn").disabled = (cur === data.length-1);
+
+  const imgWrap = document.getElementById("qimgWrap");
+  imgWrap.innerHTML = "";
+  if(item.img){
+    const img = document.createElement("img");
+    img.src = item.img;
+    img.addEventListener("click", ()=>{
+      document.getElementById("lightboxImg").src = item.img;
+      document.getElementById("lightbox").classList.add("open");
+      document.getElementById("lightboxHint").style.display = "block";
+    });
+    imgWrap.appendChild(img);
+  }
+
+  const answerArea = document.getElementById("answerArea");
+  answerArea.innerHTML = "";
+  const order = shuffleOrder[cur]; // aralashtirilgan asl indekslar ro'yxati
+  order.forEach((origIdx, displayIdx)=>{
+    const opt = item.options[origIdx];
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.innerHTML = "<b>" + letters[displayIdx] + ")</b> " + opt;
+    if(st.selected === origIdx) b.classList.add("selected");
+    if(st.checked){
+      if(origIdx === item.correct) b.classList.add("correctAns");
+      else if(origIdx === st.selected) b.classList.add("wrongAns");
+    }
+    b.addEventListener("click", ()=>{
+      if(st.checked) return; // tekshirilgandan keyin o'zgartirib bo'lmaydi
+      st.selected = origIdx;
+      saveState();
+      render();
+    });
+    answerArea.appendChild(b);
+  });
+
+  const checkBtn = document.getElementById("checkBtn");
+  checkBtn.disabled = (st.selected === null) || st.checked;
+  checkBtn.textContent = st.checked ? "Tekshirildi" : "Tekshirish";
+
+  const fb = document.getElementById("feedback");
+  const ew = document.getElementById("explainWrap");
+  if(st.checked){
+    fb.className = "feedback " + (st.correct ? "ok" : "bad");
+    fb.innerHTML = (st.correct ? "\u2705 To'g'ri! " : "\u274c Noto'g'ri. ") +
+      "To'g'ri javob: <b>" + letters[order.indexOf(item.correct)] + ") " + item.options[item.correct] + "</b>";
+
+    let html = "";
+    if(item.steps){
+      item.steps.forEach((s,i)=>{
+        html += '<div class="step"><div class="stepnum">'+(i+1)+'</div><div class="stepbody">' +
+          '<div class="lbl">'+s[0]+'</div><div class="eq">'+s[1]+'</div></div></div>';
+      });
+    }
+    if(item.note){
+      html += '<div class="finalnote">'+item.note+'</div>';
+    }
+    ew.innerHTML = html;
+  } else {
+    fb.className = "feedback";
+    fb.innerHTML = "";
+    ew.innerHTML = "";
+  }
+
+  refreshGrid();
+}
+
+function checkAnswer(){
+  const item = data[cur];
+  const st = state[cur];
+  if(st.selected === null || st.checked) return;
+  st.checked = true;
+  st.correct = (st.selected === item.correct);
+  saveState();
+  render();
+}
+
+function go(delta){
+  const n = cur + delta;
+  if(n < 0 || n >= data.length) return;
+  cur = n;
+  render();
+}
+
+document.getElementById("checkBtn").addEventListener("click", checkAnswer);
+document.getElementById("prevBtn").addEventListener("click", ()=>go(-1));
+document.getElementById("nextBtn").addEventListener("click", ()=>go(1));
+
+if(isLocked()){
+  showLockedScreen();
+} else {
+  buildGrid();
+  render();
+}
+
+/* ===================== Yakuniy natija ekrani ===================== */
+
+document.getElementById("finishBtn").addEventListener("click", ()=>{
+  const roziMi = confirm(
+    "Haqiqatan ham testni yakunlaysizmi?\n\n" +
+    "Diqqat: yakunlagandan so'ng testni QAYTA YECHIB BO'LMAYDI. " +
+    "Agar hali javob bermagan savollaringiz bo'lsa, avval ularni yeching."
+  );
+  if(!roziMi) return;
+  showResult();
+});
+
+function renderCategoryBreakdown(){
+  const catStats = {};
+  data.forEach((item, i) => {
+    const cat = item.mavzu || "Boshqa";
+    if(!catStats[cat]) catStats[cat] = {correct:0, total:0};
+    catStats[cat].total++;
+    if(state[i] && state[i].checked && state[i].correct) catStats[cat].correct++;
+  });
+  const catListEl = document.getElementById("catList");
+  const catBreakdownEl = document.getElementById("catBreakdown");
+  if(!catListEl || !catBreakdownEl) return;
+  catListEl.innerHTML = "";
+  const catEntries = Object.entries(catStats).sort((a,b)=> (a[1].correct/a[1].total) - (b[1].correct/b[1].total));
+  catEntries.forEach(([cat, s])=>{
+    const isGood = s.correct === s.total;
+    const row = document.createElement("div");
+    row.className = "catRow " + (isGood ? "good" : "weak");
+    row.innerHTML = "<span class=\"catName\">" + (isGood ? "\u2705" : "\u26a0\ufe0f") + " " + cat + "</span><span class=\"catScore\">" + s.correct + "/" + s.total + " to'g'ri</span>";
+    catListEl.appendChild(row);
+  });
+  catBreakdownEl.style.display = "block";
+}
+
+function showResult(){
+  const checkedCount = state.filter(s=>s.checked).length;
+  const correctCount = state.filter(s=>s.checked && s.correct).length;
+
+  if(checkedCount < data.length){
+    const qoldi = data.length - checkedCount;
+    const davomEt = confirm(
+      "Siz hali " + qoldi + " ta savolni tekshirmadingiz. " +
+      "Baribir yakunlab, natijani ko'rasizmi?"
+    );
+    if(!davomEt) return;
+  }
+
+  document.getElementById("quizArea").classList.add("hidden");
+  const rs = document.getElementById("resultScreen");
+  rs.classList.add("show");
+
+  document.getElementById("bigScore").textContent = correctCount + "/" + data.length;
+  const pct = Math.round((correctCount / data.length) * 100);
+  document.getElementById("pctScore").textContent = pct + "%";
+
+  const elapsedMs = Date.now() - testStartTime;
+  const vaqtStr = formatDuration(elapsedMs);
+  localStorage.setItem(DURATION_KEY, vaqtStr);
+  const timeNoteEl = document.getElementById("timeNote");
+  if(timeNoteEl) timeNoteEl.textContent = "Sarflangan vaqt: " + vaqtStr;
+  renderCategoryBreakdown();
+
+  const savedName = localStorage.getItem("oquvchi_ismi");
+  if(savedName) document.getElementById("nameInput").value = savedName;
+
+  // Natija ko'rilgan zahoti testni qulflaymiz — shu qurilmadan qayta topshirib
+  // bo'lmaydi (javoblarni ko'rib, qayta yechib 100% olishning oldini olish uchun).
+  lockTest();
+  document.getElementById("restartBtn").style.display = "none";
+  document.getElementById("lockedNote").style.display = "block";
+}
+
+function showLockedScreen(){
+  // Sahifa qayta ochilganda, agar test allaqachon yakunlangan bo'lsa,
+  // to'g'ridan-to'g'ri natija ekranini ko'rsatamiz va qayta yechishga yo'l qo'ymaymiz.
+  const correctCount = state.filter(s=>s.checked && s.correct).length;
+
+  document.getElementById("quizArea").classList.add("hidden");
+  document.getElementById("resultScreen").classList.add("show");
+  document.getElementById("bigScore").textContent = correctCount + "/" + data.length;
+  const pct = data.length ? Math.round((correctCount / data.length) * 100) : 0;
+  document.getElementById("pctScore").textContent = pct + "%";
+  const savedVaqt = localStorage.getItem(DURATION_KEY);
+  const timeNoteEl2 = document.getElementById("timeNote");
+  if(timeNoteEl2 && savedVaqt) timeNoteEl2.textContent = "Sarflangan vaqt: " + savedVaqt;
+  renderCategoryBreakdown();
+  document.getElementById("restartBtn").style.display = "none";
+  document.getElementById("lockedNote").style.display = "block";
+
+  const savedName = localStorage.getItem("oquvchi_ismi");
+  if(savedName) document.getElementById("nameInput").value = savedName;
+
+  if(localStorage.getItem("natija_yuborilgan_" + TEST_CONFIG.title) === "true"){
+    document.getElementById("sendResultBtn").disabled = true;
+    document.getElementById("sendStatus").textContent = "\u2705 Natija allaqachon yuborilgan.";
+    document.getElementById("sendStatus").style.color = "#1c7a33";
+    document.getElementById("resendZone").style.display = "block";
+  }
+}
+
+// O'qituvchi uchun qayta ochish: 1 marta bosilsa, kod so'raladi.
+document.getElementById("unlockTapZone").addEventListener("click", ()=>{
+  {
+    const kod = prompt("O'qituvchi kodi:");
+    if(kod === null) return;
+    if(kod === TEST_CONFIG.teacherUnlockCode){
+      const roziMi = confirm(
+        "Bu o'quvchiga testni QAYTA yechishga ruxsat berilsinmi?\n" +
+        "Avvalgi barcha javoblari tozalanadi."
+      );
+      if(roziMi){
+        localStorage.removeItem(LOCK_KEY);
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(SHUFFLE_KEY);localStorage.removeItem(QORDER_KEY);
+        localStorage.removeItem(TIME_KEY);
+        localStorage.removeItem(DURATION_KEY);
+        localStorage.removeItem(MINI_TIMER_KEY);
+        localStorage.removeItem("oquvchi_ismi");
+        localStorage.removeItem("natija_yuborilgan_" + TEST_CONFIG.title);
+        alert("Ochildi! Sahifa qayta yuklanadi.");
+        location.reload();
+      }
+    } else {
+      alert("Kod noto'g'ri.");
+    }
+  }
+});
+
+document.getElementById("resendLink").addEventListener("click", ()=>{
+  document.getElementById("sendResultBtn").disabled = false;
+  document.getElementById("sendStatus").textContent = "";
+  document.getElementById("resendZone").style.display = "none";
+});
+
+document.getElementById("restartBtn").addEventListener("click", ()=>{
+  const roziMi = confirm("Barcha javoblaringiz tozalanadi. Rozimisiz?");
+  if(!roziMi) return;
+  state = data.map(()=>({selected:null, checked:false, correct:null}));
+  saveState();
+
+  // Taymerlarni darhol, sahifa qayta yuklanishiga bog'liq bo'lmagan holda
+  // 00:00:00'ga qaytaramiz (miniStart va testStartTime shu skriptning
+  // umumiy o'zgaruvchilari, shuning uchun ularni to'g'ridan-to'g'ri
+  // yangilaymiz — bu reload ishlamay qolgan holatlarda ham ishlaydi).
+  localStorage.removeItem(MINI_TIMER_KEY);
+  localStorage.removeItem(TIME_KEY);
+  localStorage.removeItem(DURATION_KEY);
+  miniStart = Date.now();
+  localStorage.setItem(MINI_TIMER_KEY, String(miniStart));
+  updateMiniTimer();
+  testStartTime = getStartTime();
+
+  localStorage.removeItem(QORDER_KEY);
+  shuffleOrder = generateShuffle();
+  localStorage.setItem(SHUFFLE_KEY, JSON.stringify(shuffleOrder));
+  location.reload();
+  return;
+  cur = 0;
+  document.getElementById("resultScreen").classList.remove("show");
+  document.getElementById("quizArea").classList.remove("hidden");
+  document.getElementById("sendStatus").textContent = "";
+  render();
+});
+
+document.getElementById("sendResultBtn").addEventListener("click", ()=>{
+  const ism = document.getElementById("nameInput").value.trim();
+  const statusEl = document.getElementById("sendStatus");
+  if(!ism){
+    statusEl.textContent = "Iltimos, ismingizni kiriting.";
+    statusEl.style.color = "#c23c3c";
+    return;
+  }
+  localStorage.setItem("oquvchi_ismi", ism);
+
+  const correctCount = state.filter(s=>s.checked && s.correct).length;
+  const pct = Math.round((correctCount / data.length) * 100);
+  const vaqtStr = localStorage.getItem(DURATION_KEY) || formatDuration(Date.now() - testStartTime);
+  const ballMatni = correctCount + "/" + data.length + " (" + pct + "%) | " + vaqtStr;
+
+  statusEl.textContent = "Yuborilmoqda...";
+  statusEl.style.color = "#8a93a6";
+
+  const params = new URLSearchParams();
+  params.append(TEST_CONFIG.entryIsm, ism);
+  params.append(TEST_CONFIG.entryBall, ballMatni);
+  params.append(TEST_CONFIG.entryMavzu, TEST_CONFIG.title);
+
+  fetch(TEST_CONFIG.formUrl, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString()
+  }).then(()=>{
+    statusEl.textContent = "\u2705 Natija yuborildi!";
+    statusEl.style.color = "#1c7a33";
+    document.getElementById("sendResultBtn").disabled = true;
+    localStorage.setItem("natija_yuborilgan_" + TEST_CONFIG.title, "true");
+  }).catch(()=>{
+    statusEl.textContent = "\u26a0\ufe0f Yuborilmadi. Internetni tekshiring va qayta urining.";
+    statusEl.style.color = "#c23c3c";
+  });
+});
+</script>
+</body>
+</html>
