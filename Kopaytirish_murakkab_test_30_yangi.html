@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ko'paytirish: murakkab test (30 ta savol)</title>
+<style>
+  *{box-sizing:border-box;}
+  body{font-family:Georgia,'Times New Roman',serif;background:#fff;margin:0;padding:0;color:#1b2430;}
+  .wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px;}
+  #qimgWrap img{max-width:100%;border-radius:10px;cursor:zoom-in;transition:opacity .15s;}
+  #qimgWrap img:active{opacity:0.85;}
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(10,14,20,0.92);z-index:999;align-items:center;justify-content:center;padding:20px;}
+  .lightbox.open{display:flex;}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,0.5);}
+  .lightbox-hint{position:fixed;bottom:24px;left:0;right:0;text-align:center;color:#cfd6e0;font-family:Arial,sans-serif;font-size:13px;z-index:1000;}
+  h1{font-family:Arial,sans-serif;font-size:20px;color:#1a2a55;margin:6px 0 2px;}
+  .subtitle{font-family:Arial,sans-serif;color:#8a93a6;font-size:14px;margin-bottom:14px;}
+  .stats{font-family:Arial,sans-serif;color:#8a93a6;font-size:13px;display:flex;gap:18px;margin-bottom:14px;}
+  .stats b{color:#1b2430;}
+  .gridnav{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-bottom:22px;max-height:340px;overflow-y:auto;padding-right:4px;}
+  .gridnav button{font-family:Arial,sans-serif;border:1px solid #e3e6ee;background:#f7f8fb;color:#5b6474;border-radius:8px;padding:8px 0;font-size:12px;cursor:pointer;}
+  .gridnav button.current{background:#1a2a55;color:#fff;border-color:#1a2a55;}
+  .gridnav button.answered{background:#eef1fa;border-color:#b9c2de;color:#3a4358;}
+  .gridnav button.correctQ{background:#eaf7ec;border-color:#2fa84f;color:#1c7a33;font-weight:bold;}
+  .gridnav button.wrongQ{background:#fdecec;border-color:#e05252;color:#c23c3c;font-weight:bold;}
+  .gridnav button.correctQ.current,.gridnav button.wrongQ.current,.gridnav button.answered.current{background:#1a2a55;color:#fff;border-color:#1a2a55;}
+
+  .qbadge{display:inline-block;background:#1a2a55;color:#fff;font-family:Arial,sans-serif;font-size:14px;padding:8px 18px;border-radius:20px;margin-bottom:14px;}
+  .qtext{font-size:17px;line-height:1.55;margin-bottom:16px;color:#1b2430;}
+  .qtext .premise{background:#eef1fa;border-left:5px solid #1a2a55;border-radius:10px;padding:13px 15px;margin-bottom:14px;color:#1a2a55;font-weight:bold;}
+  .qtext .speaker{border-radius:10px;padding:12px 14px;margin:10px 0;font-family:Arial,sans-serif;font-size:15.5px;line-height:1.55;}
+  .qtext .speaker .speakerName{display:block;font-weight:bold;margin-bottom:4px;}
+  .qtext .speaker.speakerA{background:#fff4e6;border-left:5px solid #d9822b;color:#6e3d0c;}
+  .qtext .speaker.speakerB{background:#eaf7f7;border-left:5px solid #159a9c;color:#0b5556;}
+  .qtext .ask{background:#f0f3fb;border:1px solid #c7cde0;border-radius:10px;padding:12px 14px;margin-top:15px;color:#1a2a55;font-weight:bold;}
+
+  .opt{display:block;width:100%;text-align:left;font-family:Arial,sans-serif;font-size:15.5px;padding:14px 16px;margin-bottom:12px;border-radius:12px;border:1px solid #e3e6ee;background:#fff;cursor:pointer;color:#1b2430;}
+  .opt:hover{background:#f7f8fb;}
+  .opt.selected{border-color:#1a2a55;background:#eef1fa;}
+  .opt.correctAns{border:2px solid #2fa84f;background:#eafbee;color:#1c7a33;font-weight:bold;}
+  .opt.wrongAns{border:2px solid #e05252;background:#fdecec;color:#c23c3c;font-weight:bold;}
+
+  .checkbtn{font-family:Arial,sans-serif;background:#7e93c9;color:#fff;border:none;padding:14px 28px;border-radius:24px;font-size:16px;cursor:pointer;display:block;margin:6px 0 18px;}
+  .checkbtn:hover{background:#6c81b8;}
+  .checkbtn:disabled{opacity:.5;cursor:default;}
+
+  .feedback{font-family:Arial,sans-serif;padding:14px 16px;border-radius:12px;font-size:15px;margin-bottom:18px;border:1px solid;display:none;}
+  .feedback.ok{display:block;background:#eafbee;border-color:#2fa84f;color:#1c7a33;}
+  .feedback.bad{display:block;background:#fdecec;border-color:#e05252;color:#c23c3c;}
+
+  .step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+  .stepnum{flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:2px solid #1a2a55;color:#1a2a55;font-family:Arial,sans-serif;font-weight:bold;display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .stepbody{font-family:Arial,sans-serif;flex:1;}
+  .stepbody .lbl{font-size:12px;letter-spacing:.02em;color:#6b7386;text-transform:uppercase;margin-bottom:4px;font-weight:bold;}
+  .stepbody .eq{background:#f7f8fb;border:1px solid #e3e6ee;border-radius:10px;padding:11px 13px;font-size:15px;font-family:'Courier New',monospace;color:#1b2430;}
+  .finalnote{font-family:Arial,sans-serif;font-size:15px;color:#1a2a55;background:#f0f3fb;border-left:4px solid #1a2a55;padding:12px 14px;border-radius:6px;margin-top:6px;margin-bottom:20px;}
+
+  .navrow{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+  .navrow button{width:52px;height:52px;border-radius:50%;border:1px solid #c7cde0;background:#fff;font-size:20px;color:#1a2a55;cursor:pointer;}
+  .navrow button:disabled{opacity:.3;cursor:default;}
+  .navrow .pos{font-family:Arial,sans-serif;color:#5b6474;font-size:15px;}
+  .footerNote{font-family:Arial,sans-serif;color:#8a93a6;font-size:12.5px;text-align:center;margin-top:26px;line-height:1.5;}
+
+  .finishRow{margin-top:8px;margin-bottom:10px;}
+  .finishBtn{font-family:Arial,sans-serif;background:#1a2a55;color:#fff;border:none;padding:14px 24px;border-radius:24px;font-size:15px;cursor:pointer;width:100%;}
+  .finishBtn:hover{background:#12203f;}
+
+  /* Yakuniy natija ekrani */
+  .resultScreen{display:none;text-align:center;padding:30px 10px;}
+  .resultScreen.show{display:block;}
+  .resultScreen .bigscore{font-family:Arial,sans-serif;font-size:52px;font-weight:bold;color:#1a2a55;margin:10px 0 4px;}
+  .resultScreen .pct{font-family:Arial,sans-serif;font-size:20px;color:#5b6474;margin-bottom:24px;}
+  .resultScreen .nameRow{margin-bottom:20px;}
+  .resultScreen input{font-family:Arial,sans-serif;font-size:15px;padding:12px 14px;border-radius:10px;border:1px solid #d3d8e6;width:80%;max-width:280px;}
+  .resultScreen .sendStatus{font-family:Arial,sans-serif;font-size:13px;color:#8a93a6;margin-top:10px;min-height:18px;}
+  .restartBtn{font-family:Arial,sans-serif;background:#eef1fa;color:#1a2a55;border:1px solid #c7cde0;padding:12px 22px;border-radius:20px;font-size:14px;cursor:pointer;margin-top:10px;}
+  #quizArea.hidden{display:none;}
+.catBreakdown{margin:14px 0 22px;text-align:left;max-width:340px;margin-left:auto;margin-right:auto;display:none;}
+  .catBreakdown .catTitle{font-family:Arial,sans-serif;font-size:12.5px;color:#8a93a6;text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.03em;}
+  .catRow{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-radius:10px;margin-bottom:6px;font-family:Arial,sans-serif;font-size:14px;}
+  .catRow.good{background:#eafbee;color:#1c7a33;}
+  .catRow.weak{background:#fdecec;color:#c23c3c;}
+  .catRow .catName{font-weight:500;}
+  .catRow .catScore{font-weight:bold;}
+  .catLegend{font-family:Arial,sans-serif;font-size:11.5px;color:#9aa1b5;text-align:center;margin-bottom:14px;line-height:1.5;}
+  .gridnav{max-height:340px;} #miniTimer::before{content:"⏱ ";font-size:.72em;opacity:.75;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============================================================= -->
+  <!--  BU YERGA TEGMANG — asosiy test qismi (motor).                 -->
+  <!--  Har yangi mavzu uchun faqat pastdagi TEST_CONFIG blokini      -->
+  <!--  o'zgartirasiz (fayl oxirida, <script> ichida).                -->
+  <!-- ============================================================= -->
+
+  <div id="quizArea">
+    <h1 id="pageTitle">Ko'paytirish</h1>
+    <div class="subtitle" id="pageSubtitle"></div><div class="subtitle" id="pageAuthor" style="margin-top:-8px;color:#1a2a55;font-weight:bold;"></div><div id="miniTimer" style="display:inline-block;background:#eef1fa;color:#1a2a55;border-radius:9px;padding:5px 12px;margin:-5px 0 12px;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;letter-spacing:.04em;">00:00:00</div>
+    <div class="stats">Yechilgan: <b id="statAnswered">0/0</b></div>
+
+    <div class="gridnav" id="gridnav"></div>
+
+    <div class="qbadge" id="qbadge">1-savol</div>
+    <div class="qtext" id="qtext"></div>
+    <div id="qimgWrap"></div>
+
+    <div class="lightbox" id="lightbox" onclick="this.classList.remove('open');document.getElementById('lightboxHint').style.display='none';">
+      <img id="lightboxImg" src="" alt="kattalashtirilgan rasm">
+    </div>
+    <div class="lightbox-hint" id="lightboxHint" style="display:none;">Yopish uchun istalgan joyni bosing</div>
+
+    <div id="answerArea"></div>
+
+    <button class="checkbtn" id="checkBtn">Tekshirish</button>
+
+    <div class="feedback" id="feedback"></div>
+    <div id="explainWrap"></div>
+
+    <div class="navrow">
+      <button id="prevBtn">&larr;</button>
+      <div class="pos" id="posLabel">1 / 1</div>
+      <button id="nextBtn">&rarr;</button>
+    </div>
+
+    <div class="finishRow">
+      <button class="finishBtn" id="finishBtn">Testni yakunlash va natijani ko'rish</button>
+    </div>
+
+    <div class="footerNote">
+      Javobni tanlang &rarr; "Tekshirish" tugmasini bosing &rarr; yechim qadam-baqadam ochiladi
+    </div>
+  </div>
+
+  <!-- Yakuniy natija ekrani -->
+  <div class="resultScreen" id="resultScreen">
+    <h1>Test yakunlandi! 🎉</h1>
+    <div class="bigscore" id="bigScore">0/0</div>
+    <div class="pct" id="pctScore">0%</div>
+    <div class="pct" id="timeNote" style="font-size:13px;color:#9aa1b5;margin-top:-8px;margin-bottom:6px;"></div>
+    <div class="catBreakdown" id="catBreakdown">
+      <div class="catTitle">Mavzular bo'yicha natija</div>
+      <div class="catLegend">✅ hamma to'g'ri &nbsp;•&nbsp; ⚠️ xato bor &nbsp;•&nbsp; raqamlar: to'g'ri&nbsp;javob&nbsp;/&nbsp;jami&nbsp;savol</div>
+      <div id="catList"></div>
+    </div>
+
+    <div class="nameRow">
+      <input type="text" id="nameInput" placeholder="Ismingizni kiriting">
+      <div><button class="finishBtn" style="margin-top:12px;width:auto;padding:12px 24px;" id="sendResultBtn">Natijani yuborish</button></div>
+      <div class="sendStatus" id="sendStatus"></div>
+      <div id="resendZone" style="display:none;margin-top:6px;">
+        <span id="resendLink" style="font-family:Arial,sans-serif;font-size:12px;color:#8a93a6;text-decoration:underline;cursor:pointer;">Ishonchim komil emas, qayta yuborish</span>
+      </div>
+    </div>
+
+    <div class="footerNote" id="authorResult" style="margin-top:10px;font-weight:bold;color:#1a2a55;"></div>
+    <button class="restartBtn" id="restartBtn">Testni qaytadan boshlash</button>
+    <div class="footerNote" id="lockedNote" style="display:none;">
+      &#9989; Bu test yakunlandi va shu qurilmada qulflandi.<br>Ertalab soat 8:00 da avtomatik qayta ochiladi.
+    </div>
+    <!-- O'qituvchi uchun: shu matnni bosilsa, qayta ochish kodi so'raladi -->
+    <div id="unlockTapZone" style="text-align:center;margin-top:22px;">
+      <span style="font-family:Arial,sans-serif;font-size:12px;color:#c7cde0;cursor:pointer;border-bottom:1px dotted #c7cde0;padding-bottom:2px;">O'qituvchi uchun</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* =====================================================================
+   ==========  FAQAT SHU YERDAN PASTINI HAR YANGI MAVZU UCHUN  ==========
+   ==========  O'ZGARTIRING. YUQORIDAGI HTML/CSS GA TEGMANG.   ==========
+   ===================================================================== */
+
+const TEST_CONFIG = {"title": "Ko'paytirish_murakkab_test_30", "subtitle": "Ko'paytirish xossalari, taqsimot qonunlari, ustun usuli va qavslarni ochish", "author": "Fayziyev Azizbek", "formUrl": "https://docs.google.com/forms/d/e/1FAIpQLSfZUmdCVol5FGrqSlPj3ZrbBF5L48tVjzvLP_nGz9M3M3o_ag/formResponse", "entryIsm": "entry.650362337", "entryBall": "entry.1056081243", "entryMavzu": "entry.854585668", "teacherUnlockCode": "0000", "questions": [{"n": 1, "options": ["4502", "4500", "4498", "4600"], "correct": 1, "mavzu": "Qulay hisoblash", "premise": "50·9·2·5", "ask": "Qulay usulda hisoblang va natijani toping.", "steps": [["1-qadam", "O'rin almashtirish va guruhlash xossalari bilan qulay juftlar tuzamiz: (50·2)·(9·5)"], ["2-qadam", "50·2 = 100  va  9·5 = 45"], ["3-qadam", "100·45 = 4500"], ["Xulosa", "To'g'ri javob: <b>4500<\/b>."]], "note": "To'g'ri javob: <b>4500<\/b>."}, {"n": 2, "options": ["4780", "3800", "4798", "4800"], "correct": 3, "mavzu": "Qulay hisoblash", "premise": "8·20·6·5", "ask": "Qulay usulda hisoblang va natijani toping.", "steps": [["1-qadam", "O'rin almashtirish va guruhlash xossalari bilan qulay juftlar tuzamiz: (20·5)·(8·6)"], ["2-qadam", "20·5 = 100  va  8·6 = 48"], ["3-qadam", "100·48 = 4800"], ["Xulosa", "To'g'ri javob: <b>4800<\/b>."]], "note": "To'g'ri javob: <b>4800<\/b>."}, {"n": 3, "options": ["2798", "2800", "2780", "2900"], "correct": 1, "mavzu": "Qulay hisoblash", "premise": "25·7·4·4", "ask": "Qulay usulda hisoblang va natijani toping.", "steps": [["1-qadam", "O'rin almashtirish va guruhlash xossalari bilan qulay juftlar tuzamiz: (25·4)·(7·4)"], ["2-qadam", "25·4 = 100  va  7·4 = 28"], ["3-qadam", "100·28 = 2800"], ["Xulosa", "To'g'ri javob: <b>2800<\/b>."]], "note": "To'g'ri javob: <b>2800<\/b>."}, {"n": 4, "options": ["820", "900", "790", "800"], "correct": 3, "mavzu": "Qulay hisoblash", "premise": "4·20·2·5", "ask": "Qulay usulda hisoblang va natijani toping.", "steps": [["1-qadam", "O'rin almashtirish va guruhlash xossalari bilan qulay juftlar tuzamiz: (20·5)·(4·2)"], ["2-qadam", "20·5 = 100  va  4·2 = 8"], ["3-qadam", "100·8 = 800"], ["Xulosa", "To'g'ri javob: <b>800<\/b>."]], "note": "To'g'ri javob: <b>800<\/b>."}, {"n": 5, "options": ["170", "190", "200", "180"], "correct": 3, "mavzu": "Taqsimot qonunlari", "premise": "45·3 + 55·3 - 40·3", "ask": "Qulay usulda hisoblang va natijani toping.", "steps": [["1-qadam", "Umumiy ko'paytuvchi 3 ni qavsdan chiqaramiz (taqsimot qonuni): (45 + 55 - 40)·3"], ["2-qadam", "45 + 55 = 100,  100 - 40 = 60"], ["3-qadam", "60·3 = 180"], ["Xulosa", "To'g'ri javob: <b>180<\/b>."]], "note": "To'g'ri javob: <b>180<\/b>."}, {"n": 6, "options": ["190", "185", "170", "180"], "correct": 3, "mavzu": "Taqsimot qonunlari", "premise": "65·3 + 35·3 - 40·3", "ask": "Qulay usulda hisoblang va natijani toping.", "steps": [["1-qadam", "Umumiy ko'paytuvchi 3 ni qavsdan chiqaramiz (taqsimot qonuni): (65 + 35 - 40)·3"], ["2-qadam", "65 + 35 = 100,  100 - 40 = 60"], ["3-qadam", "60·3 = 180"], ["Xulosa", "To'g'ri javob: <b>180<\/b>."]], "note": "To'g'ri javob: <b>180<\/b>."}, {"n": 7, "options": ["345", "340", "330", "350"], "correct": 3, "mavzu": "Taqsimot qonunlari", "premise": "55·5 + 45·5 - 30·5", "ask": "Qulay usulda hisoblang va natijani toping.", "steps": [["1-qadam", "Umumiy ko'paytuvchi 5 ni qavsdan chiqaramiz (taqsimot qonuni): (55 + 45 - 30)·5"], ["2-qadam", "55 + 45 = 100,  100 - 30 = 70"], ["3-qadam", "70·5 = 350"], ["Xulosa", "To'g'ri javob: <b>350<\/b>."]], "note": "To'g'ri javob: <b>350<\/b>."}, {"n": 8, "options": ["5988", "5888", "6088", "5998"], "correct": 0, "mavzu": "Taqsimot qonunlari", "premise": "998·6", "ask": "Ayirishga nisbatan taqsimot qonunidan foydalanib hisoblang va natijani toping.", "steps": [["1-qadam", "998 = 1000 - 2 deb yozamiz"], ["2-qadam", "(1000 - 2)·6 = 1000·6 - 2·6"], ["3-qadam", "6000 - 12 = 5988"], ["Xulosa", "To'g'ri javob: <b>5988<\/b>."]], "note": "To'g'ri javob: <b>5988<\/b>."}, {"n": 9, "options": ["3986", "3996", "3896", "3976"], "correct": 1, "mavzu": "Taqsimot qonunlari", "premise": "999·4", "ask": "Ayirishga nisbatan taqsimot qonunidan foydalanib hisoblang va natijani toping.", "steps": [["1-qadam", "999 = 1000 - 1 deb yozamiz"], ["2-qadam", "(1000 - 1)·4 = 1000·4 - 1·4"], ["3-qadam", "4000 - 4 = 3996"], ["Xulosa", "To'g'ri javob: <b>3996<\/b>."]], "note": "To'g'ri javob: <b>3996<\/b>."}, {"n": 10, "options": ["1985", "2985", "985", "1995"], "correct": 0, "mavzu": "Taqsimot qonunlari", "premise": "397·5", "ask": "Ayirishga nisbatan taqsimot qonunidan foydalanib hisoblang va natijani toping.", "steps": [["1-qadam", "397 = 400 - 3 deb yozamiz"], ["2-qadam", "(400 - 3)·5 = 400·5 - 3·5"], ["3-qadam", "2000 - 15 = 1985"], ["Xulosa", "To'g'ri javob: <b>1985<\/b>."]], "note": "To'g'ri javob: <b>1985<\/b>."}, {"n": 11, "options": ["329974", "329874", "329894", "328874"], "correct": 1, "mavzu": "Ustun usulida ko'paytirish", "premise": "54979·6", "ask": "Ustun usulida ko'paytiring va natijani toping.", "steps": [["Birliklar xonasi", "9·6 = 54:  4 yoziladi, 5 eslab qolinadi"], ["O'nliklar xonasi", "7·6 + 5 = 47:  7 yoziladi, 4 eslab qolinadi"], ["Yuzliklar xonasi", "9·6 + 4 = 58:  8 yoziladi, 5 eslab qolinadi"], ["Minglar xonasi", "4·6 + 5 = 29:  9 yoziladi, 2 eslab qolinadi"], ["O'n minglar xonasi", "5·6 + 2 = 32:  32 to'liq yoziladi"], ["Xulosa", "To'g'ri javob: <b>329874<\/b>."]], "note": "To'g'ri javob: <b>329874<\/b>."}, {"n": 12, "options": ["118991", "118995", "118993", "119093"], "correct": 2, "mavzu": "Ustun usulida ko'paytirish", "premise": "16999·7", "ask": "Ustun usulida ko'paytiring va natijani toping.", "steps": [["Birliklar xonasi", "9·7 = 63:  3 yoziladi, 6 eslab qolinadi"], ["O'nliklar xonasi", "9·7 + 6 = 69:  9 yoziladi, 6 eslab qolinadi"], ["Yuzliklar xonasi", "9·7 + 6 = 69:  9 yoziladi, 6 eslab qolinadi"], ["Minglar xonasi", "6·7 + 6 = 48:  8 yoziladi, 4 eslab qolinadi"], ["O'n minglar xonasi", "1·7 + 4 = 11:  11 to'liq yoziladi"], ["Xulosa", "To'g'ri javob: <b>118993<\/b>."]], "note": "To'g'ri javob: <b>118993<\/b>."}, {"n": 13, "options": ["773277", "772272", "773282", "773272"], "correct": 3, "mavzu": "Ustun usulida ko'paytirish", "premise": "96659·8", "ask": "Ustun usulida ko'paytiring va natijani toping.", "steps": [["Birliklar xonasi", "9·8 = 72:  2 yoziladi, 7 eslab qolinadi"], ["O'nliklar xonasi", "5·8 + 7 = 47:  7 yoziladi, 4 eslab qolinadi"], ["Yuzliklar xonasi", "6·8 + 4 = 52:  2 yoziladi, 5 eslab qolinadi"], ["Minglar xonasi", "6·8 + 5 = 53:  3 yoziladi, 5 eslab qolinadi"], ["O'n minglar xonasi", "9·8 + 5 = 77:  77 to'liq yoziladi"], ["Xulosa", "To'g'ri javob: <b>773272<\/b>."]], "note": "To'g'ri javob: <b>773272<\/b>."}, {"n": 14, "options": ["388480", "388470", "388460", "387470"], "correct": 1, "mavzu": "Ustun usulida ko'paytirish", "premise": "77694·5", "ask": "Ustun usulida ko'paytiring va natijani toping.", "steps": [["Birliklar xonasi", "4·5 = 20:  0 yoziladi, 2 eslab qolinadi"], ["O'nliklar xonasi", "9·5 + 2 = 47:  7 yoziladi, 4 eslab qolinadi"], ["Yuzliklar xonasi", "6·5 + 4 = 34:  4 yoziladi, 3 eslab qolinadi"], ["Minglar xonasi", "7·5 + 3 = 38:  8 yoziladi, 3 eslab qolinadi"], ["O'n minglar xonasi", "7·5 + 3 = 38:  38 to'liq yoziladi"], ["Xulosa", "To'g'ri javob: <b>388470<\/b>."]], "note": "To'g'ri javob: <b>388470<\/b>."}, {"n": 15, "options": ["36a - 48b - 54", "6a - 48b + 54", "36a - 48b + 54", "36a - 48b + 9"], "correct": 2, "mavzu": "Qavslarni ochish", "premise": "6·(6a - 8b + 9)", "ask": "Qavslarni oching. Qaysi javob to'g'ri?", "steps": [["1-had", "6·6a = 36a"], ["2-had", "6·8b = 48b (ishorasi minus bo'lib qoladi)"], ["3-had", "6·9 = 54"], ["Natija", "36a - 48b + 54"], ["Xulosa", "To'g'ri javob: <b>36a - 48b + 54<\/b>."]], "note": "To'g'ri javob: <b>36a - 48b + 54<\/b>."}, {"n": 16, "options": ["7a + 24b + 12", "21a + 24b + 4", "21a + 24b - 12", "21a + 24b + 12"], "correct": 3, "mavzu": "Qavslarni ochish", "premise": "3·(7a + 8b + 4)", "ask": "Qavslarni oching. Qaysi javob to'g'ri?", "steps": [["1-had", "3·7a = 21a"], ["2-had", "3·8b = 24b"], ["3-had", "3·4 = 12"], ["Natija", "21a + 24b + 12"], ["Xulosa", "To'g'ri javob: <b>21a + 24b + 12<\/b>."]], "note": "To'g'ri javob: <b>21a + 24b + 12<\/b>."}, {"n": 17, "options": ["72x + 18y", "72x - 2y", "8x - 18y", "72x - 18y"], "correct": 3, "mavzu": "Qavslarni ochish", "premise": "9·(8x - 2y)", "ask": "Qavslarni oching. Qaysi javob to'g'ri?", "steps": [["1-had", "9·8x = 72x"], ["2-had", "9·2y = 18y (ishorasi minus bo'lib qoladi)"], ["Natija", "72x - 18y"], ["Xulosa", "To'g'ri javob: <b>72x - 18y<\/b>."]], "note": "To'g'ri javob: <b>72x - 18y<\/b>."}, {"n": 18, "options": ["4x - 36y", "16x - 36y", "16x - 9y", "16x + 36y"], "correct": 1, "mavzu": "Qavslarni ochish", "premise": "4·(4x - 9y)", "ask": "Qavslarni oching. Qaysi javob to'g'ri?", "steps": [["1-had", "4·4x = 16x"], ["2-had", "4·9y = 36y (ishorasi minus bo'lib qoladi)"], ["Natija", "16x - 36y"], ["Xulosa", "To'g'ri javob: <b>16x - 36y<\/b>."]], "note": "To'g'ri javob: <b>16x - 36y<\/b>."}, {"n": 19, "options": ["187", "207", "107", "209"], "correct": 1, "mavzu": "Qavslarni ochish", "premise": "9·(8x - 9)", "ask": "Qavslarni oching va x = 4 da ifodaning qiymatini toping.", "steps": [["1-qadam", "Qavslarni ochamiz: 9·(8x - 9) = 72x - 81"], ["2-qadam", "x = 4 ni qo'yamiz: 72·4 - 81"], ["3-qadam", "288 - 81 = 207"], ["Xulosa", "To'g'ri javob: <b>207<\/b>."]], "note": "To'g'ri javob: <b>207<\/b>."}, {"n": 20, "options": ["60", "80", "62", "55"], "correct": 0, "mavzu": "Qavslarni ochish", "premise": "4·(3x - 3)", "ask": "Qavslarni oching va x = 6 da ifodaning qiymatini toping.", "steps": [["1-qadam", "Qavslarni ochamiz: 4·(3x - 3) = 12x - 12"], ["2-qadam", "x = 6 ni qo'yamiz: 12·6 - 12"], ["3-qadam", "72 - 12 = 60"], ["Xulosa", "To'g'ri javob: <b>60<\/b>."]], "note": "To'g'ri javob: <b>60<\/b>."}, {"n": 21, "options": ["1090", "100", "88", "90"], "correct": 3, "mavzu": "Qavslarni ochish", "premise": "3·(7x - 5)", "ask": "Qavslarni oching va x = 5 da ifodaning qiymatini toping.", "steps": [["1-qadam", "Qavslarni ochamiz: 3·(7x - 5) = 21x - 15"], ["2-qadam", "x = 5 ni qo'yamiz: 21·5 - 15"], ["3-qadam", "105 - 15 = 90"], ["Xulosa", "To'g'ri javob: <b>90<\/b>."]], "note": "To'g'ri javob: <b>90<\/b>."}, {"n": 22, "options": ["7·(5x - 9) = 35x - 63", "7·(5x - 9) = 35x + 63", "7·(5x - 9) = 35x - 9", "7·(5x - 9) = 5x - 63"], "correct": 0, "mavzu": "Qavslarni ochish", "premise": "7·(5x - 9)", "ask": "Qavslar qaysi javobda to'g'ri ochilgan?", "steps": [["1-qadam", "Birinchi hadni ko'paytiramiz: 7·5x = 35x"], ["2-qadam", "Ikkinchi hadni ham ko'paytiramiz: 7·9 = 63"], ["3-qadam", "Ishorani saqlaymiz (minus): 35x - 63"], ["Xulosa", "To'g'ri javob: <b>7·(5x - 9) = 35x - 63<\/b>."]], "note": "To'g'ri javob: <b>7·(5x - 9) = 35x - 63<\/b>."}, {"n": 23, "options": ["8·(3x - 2) = 24x + 16", "8·(3x - 2) = 24x - 16", "8·(3x - 2) = 24x - 2", "8·(3x - 2) = 3x - 16"], "correct": 1, "mavzu": "Qavslarni ochish", "premise": "8·(3x - 2)", "ask": "Qavslar qaysi javobda to'g'ri ochilgan?", "steps": [["1-qadam", "Birinchi hadni ko'paytiramiz: 8·3x = 24x"], ["2-qadam", "Ikkinchi hadni ham ko'paytiramiz: 8·2 = 16"], ["3-qadam", "Ishorani saqlaymiz (minus): 24x - 16"], ["Xulosa", "To'g'ri javob: <b>8·(3x - 2) = 24x - 16<\/b>."]], "note": "To'g'ri javob: <b>8·(3x - 2) = 24x - 16<\/b>."}, {"n": 24, "options": ["168", "188", "163", "158"], "correct": 0, "mavzu": "Taqsimot qonunlari", "premise": "Bitta qutida 6 ta qalam bor. 16 ta va 12 ta qutida jami nechta qalam bor?", "ask": "Taqsimot qonunidan foydalanib javobni toping.", "steps": [["1-qadam", "Qutilar soni: 16 + 12 = 28"], ["2-qadam", "Taqsimot qonuni: (16 + 12)·6 = 16·6 + 12·6"], ["3-qadam", "96 + 72 = 168"], ["Xulosa", "To'g'ri javob: <b>168<\/b>."]], "note": "To'g'ri javob: <b>168<\/b>."}, {"n": 25, "options": ["252", "132", "152", "162"], "correct": 2, "mavzu": "Taqsimot qonunlari", "premise": "Bitta daftar 19 so'm turadi. 8 ta daftar necha so'm bo'ladi?", "ask": "19 = 20 - 1 deb hisoblab, javobni toping.", "steps": [["1-qadam", "19 = 20 - 1 deb yozamiz"], ["2-qadam", "(20 - 1)·8 = 20·8 - 1·8"], ["3-qadam", "160 - 8 = 152"], ["Xulosa", "To'g'ri javob: <b>152<\/b>."]], "note": "To'g'ri javob: <b>152<\/b>."}, {"n": 26, "options": ["1", "2", "3", "4"], "correct": 1, "mavzu": "Tengliklar to'g'riligi", "premise": "Quyidagi tengliklarni ko'rib chiqing:", "ask": "Ulardan nechtasi to'g'ri?", "steps": [["1-tenglik", "To'g'ri: bu qo'shishga nisbatan taqsimot qonuni."], ["2-tenglik", "To'g'ri: bu ayirishga nisbatan taqsimot qonuni."], ["3-tenglik", "Noto'g'ri: 3·(2x + 4) = 6x + 12, ikkinchi had ham 3 ga ko'paytiriladi."], ["4-tenglik", "Noto'g'ri: 0·m = 0 bo'ladi, m emas."], ["Xulosa", "To'g'ri javob: <b>2<\/b>."]], "note": "To'g'ri javob: <b>2<\/b>.", "statements": [{"speaker": "1-tenglik", "text": "(a + b)·c = a·c + b·c"}, {"speaker": "2-tenglik", "text": "(a - b)·c = a·c - b·c"}, {"speaker": "3-tenglik", "text": "3·(2x + 4) = 6x + 4"}, {"speaker": "4-tenglik", "text": "0·m = m"}]}, {"n": 27, "options": ["1", "2", "3", "4"], "correct": 1, "mavzu": "Tengliklar to'g'riligi", "premise": "Quyidagi tengliklarni ko'rib chiqing:", "ask": "Ulardan nechtasi to'g'ri?", "steps": [["1-tenglik", "Noto'g'ri: 4·(x + 2) = 4x + 8."], ["2-tenglik", "To'g'ri: ayirishga nisbatan taqsimot qonuni."], ["3-tenglik", "Noto'g'ri: 8·0 = 0."], ["4-tenglik", "To'g'ri: 6·(2a + b) = 12a + 6b."], ["Xulosa", "To'g'ri javob: <b>2<\/b>."]], "note": "To'g'ri javob: <b>2<\/b>.", "statements": [{"speaker": "1-tenglik", "text": "4·(x + 2) = 4x + 2"}, {"speaker": "2-tenglik", "text": "(7 - 2)·4 = 7·4 - 2·4"}, {"speaker": "3-tenglik", "text": "8·0 = 8"}, {"speaker": "4-tenglik", "text": "6·(2a + b) = 12a + 6b"}]}, {"n": 28, "options": ["Faqat o'rin almashtirish xossasi", "Faqat guruhlash xossasi", "O'rin almashtirish, so'ng guruhlash xossasi", "1 ning xossasi"], "correct": 2, "mavzu": "Qulay hisoblash", "premise": "25·13·4 = 25·4·13 = (25·4)·13 = 100·13 = 1300", "ask": "Bu hisoblashda qaysi xossa(lar) ishlatilgan?", "steps": [["1-qadam", "25·13·4 = 25·4·13: ko'paytuvchilarning o'rni almashdi (o'rin almashtirish xossasi)"], ["2-qadam", "(25·4)·13: 25 va 4 guruhlandi (guruhlash xossasi)"], ["3-qadam", "100·13 = 1300"], ["Xulosa", "To'g'ri javob: <b>O'rin almashtirish, so'ng guruhlash xossasi<\/b>."]], "note": "To'g'ri javob: <b>O'rin almashtirish, so'ng guruhlash xossasi<\/b>."}, {"n": 29, "options": ["Faqat o'rin almashtirish xossasi", "Faqat guruhlash xossasi", "O'rin almashtirish, so'ng guruhlash xossasi", "0 ning xossasi"], "correct": 1, "mavzu": "Qulay hisoblash", "premise": "4·(25·7) = (4·25)·7 = 100·7 = 700", "ask": "Bu hisoblashda qaysi xossa(lar) ishlatilgan?", "steps": [["1-qadam", "4·(25·7) = (4·25)·7: faqat qavs joyi o'zgardi (guruhlash xossasi)"], ["2-qadam", "4·25 = 100,  100·7 = 700"], ["Xulosa", "To'g'ri javob: <b>Faqat guruhlash xossasi<\/b>."]], "note": "To'g'ri javob: <b>Faqat guruhlash xossasi<\/b>."}, {"n": 30, "options": ["x ning har qanday qiymatida", "hech qaysi qiymatda", "faqat x = 0 da", "faqat x = 2 da"], "correct": 0, "mavzu": "Qavslarni ochish", "premise": "7·(5x - 9) = 35x - 63", "ask": "Bu tenglik x ning qaysi qiymatlarida o'rinli?", "steps": [["1-qadam", "Bu tenglik taqsimot qonunining natijasi: ikki ifoda aynan teng."], ["2-qadam", "x = 0 da: 7·(-9) = -63 va 35·0 - 63 = -63"], ["3-qadam", "x = 2 da: 7·1 = 7 va 35·2 - 63 = 7"], ["Xulosa", "To'g'ri javob: <b>x ning har qanday qiymatida<\/b>."]], "note": "To'g'ri javob: <b>x ning har qanday qiymatida<\/b>."}]};
+const MINI_TIMER_KEY="mini_timer_new_critical_pdf_" + TEST_CONFIG.title; let miniStart=Number(localStorage.getItem(MINI_TIMER_KEY)); if(!miniStart){miniStart=Date.now();localStorage.setItem(MINI_TIMER_KEY,String(miniStart));} function updateMiniTimer(){const x=Math.max(0,Math.floor((Date.now()-miniStart)/1000)),h=Math.floor(x/3600),m=Math.floor((x%3600)/60),s=x%60;const e=document.getElementById("miniTimer");if(e)e.textContent=[h,m,s].map(v=>String(v).padStart(2,"0")).join(":");} updateMiniTimer(); setInterval(updateMiniTimer,1000);;
+
+/* =====================================================================
+   ==================  BU YERDAN PASTGA TEGMANG (MOTOR)  ================
+   ===================================================================== */
+
+document.getElementById("pageTitle").textContent = TEST_CONFIG.title;
+document.getElementById("pageSubtitle").textContent = TEST_CONFIG.subtitle + " — " + TEST_CONFIG.questions.length + " ta savol";
+document.getElementById("pageAuthor").textContent = "Tuzuvchi: " + TEST_CONFIG.author;
+document.getElementById("authorResult").textContent = "Tuzuvchi: " + TEST_CONFIG.author;
+
+const QORDER_KEY = "test_qorder_" + TEST_CONFIG.title;
+function buildData(){
+  const src = TEST_CONFIG.questions;
+  let ord = null;
+  try{ ord = JSON.parse(localStorage.getItem(QORDER_KEY)); }catch(e){}
+  const valid = Array.isArray(ord) && ord.length === src.length && [...ord].sort((a,b)=>a-b).every((v,i)=>v===i);
+  if(!valid){
+    ord = src.map((_,i)=>i);
+    for(let i=ord.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [ord[i],ord[j]] = [ord[j],ord[i]]; }
+    localStorage.setItem(QORDER_KEY, JSON.stringify(ord));
+  }
+  return ord.map((k,pos)=>Object.assign({}, src[k], {n: pos+1}));
+}
+const data = buildData();
+const STORAGE_KEY = "test_progress_" + TEST_CONFIG.title;
+const LOCK_KEY = "test_locked_" + TEST_CONFIG.title;
+const SHUFFLE_KEY = "test_shuffle_" + TEST_CONFIG.title;
+const TIME_KEY = "test_starttime_" + TEST_CONFIG.title;
+const DURATION_KEY = "test_duration_" + TEST_CONFIG.title;
+
+function getStartTime(){
+  let t = localStorage.getItem(TIME_KEY);
+  if(!t){
+    t = Date.now().toString();
+    localStorage.setItem(TIME_KEY, t);
+  }
+  return parseInt(t, 10);
+}
+
+function formatDuration(ms){
+  const totalSec = Math.max(0, Math.floor(ms/1000));
+  const h = Math.floor(totalSec/3600);
+  const m = Math.floor((totalSec%3600)/60);
+  const s = totalSec%60;
+  const mm = (m<10?"0":"")+m;
+  const ss = (s<10?"0":"")+s;
+  if(h>0){
+    const hh = (h<10?"0":"")+h;
+    return hh+":"+mm+":"+ss;
+  }
+  return mm+":"+ss;
+}
+
+function generateShuffle(){
+  return data.map(item => {
+    const idx = item.options.map((_,i)=>i);
+    for(let i=idx.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [idx[i],idx[j]] = [idx[j],idx[i]];
+    }
+    return idx;
+  });
+}
+
+function loadShuffle(){
+  try{
+    const raw = localStorage.getItem(SHUFFLE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length === data.length) return parsed;
+    }
+  }catch(e){}
+  const fresh = generateShuffle();
+  localStorage.setItem(SHUFFLE_KEY, JSON.stringify(fresh));
+  return fresh;
+}
+
+function getNext8AM(fromDate){
+  const d = new Date(fromDate);
+  d.setHours(8,0,0,0);
+  if(d <= fromDate) d.setDate(d.getDate()+1);
+  return d;
+}
+
+function isLocked(){
+  const raw = localStorage.getItem(LOCK_KEY);
+  if(!raw) return false;
+
+  let lockedAt;
+  if(raw === "true"){
+    // Eski formatdagi qulf — qачон qulflanganini bilmaymiz, shuning
+    // uchun xavfsiz tomondan xato qilib, darhol ochib yuboramiz
+    // (doimiy qulflanib qolishning oldini olish uchun).
+    localStorage.removeItem(LOCK_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SHUFFLE_KEY);localStorage.removeItem(QORDER_KEY);
+    localStorage.removeItem(TIME_KEY);
+    localStorage.removeItem(DURATION_KEY);
+    localStorage.removeItem(MINI_TIMER_KEY);
+    localStorage.removeItem("natija_yuborilgan_" + TEST_CONFIG.title);
+    return false;
+  }
+  try{
+    lockedAt = new Date(JSON.parse(raw).lockedAt);
+  }catch(e){
+    lockedAt = new Date();
+  }
+
+  const unlockAt = getNext8AM(lockedAt);
+  if(new Date() >= unlockAt){
+    // Vaqt keldi — avtomatik ochamiz va yangi kun uchun tozalaymiz.
+    localStorage.removeItem(LOCK_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SHUFFLE_KEY);localStorage.removeItem(QORDER_KEY);
+    localStorage.removeItem(TIME_KEY);
+    localStorage.removeItem(DURATION_KEY);
+    localStorage.removeItem(MINI_TIMER_KEY);
+    localStorage.removeItem("natija_yuborilgan_" + TEST_CONFIG.title);
+    return false;
+  }
+  return true;
+}
+
+function lockTest(){
+  localStorage.setItem(LOCK_KEY, JSON.stringify({ lockedAt: new Date().toISOString() }));
+}
+
+function lettersFor(n){
+  const arr = [];
+  for(let i=0;i<n;i++) arr.push(String.fromCharCode(65+i)); // A, B, C, ...
+  return arr;
+}
+
+// Holatni localStorage'dan tiklash (agar bo'lsa)
+let state = loadState();
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed) && parsed.length === data.length) return parsed;
+    }
+  }catch(e){}
+  return data.map(()=>({selected:null, checked:false, correct:null}));
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let cur = 0;
+let shuffleOrder = loadShuffle();
+let testStartTime = getStartTime();
+
+function buildGrid(){
+  const g = document.getElementById("gridnav");
+  g.innerHTML = "";
+  data.forEach((item, i)=>{
+    const b = document.createElement("button");
+    b.textContent = item.n;
+    b.addEventListener("click", ()=>{ cur = i; render(); });
+    g.appendChild(b);
+  });
+  refreshGrid();
+}
+
+function refreshGrid(){
+  const g = document.getElementById("gridnav");
+  [...g.children].forEach((b,i)=>{
+    b.className = "";
+    const st = state[i];
+    if(st.checked){
+      b.classList.add(st.correct ? "correctQ" : "wrongQ");
+    } else if(st.selected !== null){
+      b.classList.add("answered");
+    }
+    if(i === cur) b.classList.add("current");
+  });
+  const answeredCount = state.filter(s=>s.checked).length;
+  document.getElementById("statAnswered").textContent = answeredCount + "/" + data.length;
+}
+
+function render(){
+  const item = data[cur];
+  const st = state[cur];
+  const letters = lettersFor(item.options.length);
+
+  document.getElementById("qbadge").textContent = item.n + "-savol";
+  const qtextEl = document.getElementById("qtext");
+  let qhtml = '<div class="premise">' + item.premise + '</div>';
+  (item.statements || []).forEach((st, i)=>{
+    qhtml += '<div class="speaker ' + (i % 2 === 0 ? 'speakerA' : 'speakerB') + '">' +
+      '<span class="speakerName">' + st.speaker + ':</span>' + st.text + '</div>';
+  });
+  qhtml += '<div class="ask">' + item.ask + '</div>';
+  qtextEl.innerHTML = qhtml;
+  document.getElementById("posLabel").textContent = (cur+1) + " / " + data.length;
+  document.getElementById("prevBtn").disabled = (cur === 0);
+  document.getElementById("nextBtn").disabled = (cur === data.length-1);
+
+  const imgWrap = document.getElementById("qimgWrap");
+  imgWrap.innerHTML = "";
+  if(item.img){
+    const img = document.createElement("img");
+    img.src = item.img;
+    img.addEventListener("click", ()=>{
+      document.getElementById("lightboxImg").src = item.img;
+      document.getElementById("lightbox").classList.add("open");
+      document.getElementById("lightboxHint").style.display = "block";
+    });
+    imgWrap.appendChild(img);
+  }
+
+  const answerArea = document.getElementById("answerArea");
+  answerArea.innerHTML = "";
+  const order = shuffleOrder[cur]; // aralashtirilgan asl indekslar ro'yxati
+  order.forEach((origIdx, displayIdx)=>{
+    const opt = item.options[origIdx];
+    const b = document.createElement("button");
+    b.className = "opt";
+    b.innerHTML = "<b>" + letters[displayIdx] + ")</b> " + opt;
+    if(st.selected === origIdx) b.classList.add("selected");
+    if(st.checked){
+      if(origIdx === item.correct) b.classList.add("correctAns");
+      else if(origIdx === st.selected) b.classList.add("wrongAns");
+    }
+    b.addEventListener("click", ()=>{
+      if(st.checked) return; // tekshirilgandan keyin o'zgartirib bo'lmaydi
+      st.selected = origIdx;
+      saveState();
+      render();
+    });
+    answerArea.appendChild(b);
+  });
+
+  const checkBtn = document.getElementById("checkBtn");
+  checkBtn.disabled = (st.selected === null) || st.checked;
+  checkBtn.textContent = st.checked ? "Tekshirildi" : "Tekshirish";
+
+  const fb = document.getElementById("feedback");
+  const ew = document.getElementById("explainWrap");
+  if(st.checked){
+    fb.className = "feedback " + (st.correct ? "ok" : "bad");
+    fb.innerHTML = (st.correct ? "\u2705 To'g'ri! " : "\u274c Noto'g'ri. ") +
+      "To'g'ri javob: <b>" + letters[order.indexOf(item.correct)] + ") " + item.options[item.correct] + "</b>";
+
+    let html = "";
+    if(item.steps){
+      item.steps.forEach((s,i)=>{
+        html += '<div class="step"><div class="stepnum">'+(i+1)+'</div><div class="stepbody">' +
+          '<div class="lbl">'+s[0]+'</div><div class="eq">'+s[1]+'</div></div></div>';
+      });
+    }
+    if(item.note){
+      html += '<div class="finalnote">'+item.note+'</div>';
+    }
+    ew.innerHTML = html;
+  } else {
+    fb.className = "feedback";
+    fb.innerHTML = "";
+    ew.innerHTML = "";
+  }
+
+  refreshGrid();
+}
+
+function checkAnswer(){
+  const item = data[cur];
+  const st = state[cur];
+  if(st.selected === null || st.checked) return;
+  st.checked = true;
+  st.correct = (st.selected === item.correct);
+  saveState();
+  render();
+}
+
+function go(delta){
+  const n = cur + delta;
+  if(n < 0 || n >= data.length) return;
+  cur = n;
+  render();
+}
+
+document.getElementById("checkBtn").addEventListener("click", checkAnswer);
+document.getElementById("prevBtn").addEventListener("click", ()=>go(-1));
+document.getElementById("nextBtn").addEventListener("click", ()=>go(1));
+
+if(isLocked()){
+  showLockedScreen();
+} else {
+  buildGrid();
+  render();
+}
+
+/* ===================== Yakuniy natija ekrani ===================== */
+
+document.getElementById("finishBtn").addEventListener("click", ()=>{
+  const roziMi = confirm(
+    "Haqiqatan ham testni yakunlaysizmi?\n\n" +
+    "Diqqat: yakunlagandan so'ng testni QAYTA YECHIB BO'LMAYDI. " +
+    "Agar hali javob bermagan savollaringiz bo'lsa, avval ularni yeching."
+  );
+  if(!roziMi) return;
+  showResult();
+});
+
+function renderCategoryBreakdown(){
+  const catStats = {};
+  data.forEach((item, i) => {
+    const cat = item.mavzu || "Boshqa";
+    if(!catStats[cat]) catStats[cat] = {correct:0, total:0};
+    catStats[cat].total++;
+    if(state[i] && state[i].checked && state[i].correct) catStats[cat].correct++;
+  });
+  const catListEl = document.getElementById("catList");
+  const catBreakdownEl = document.getElementById("catBreakdown");
+  if(!catListEl || !catBreakdownEl) return;
+  catListEl.innerHTML = "";
+  const catEntries = Object.entries(catStats).sort((a,b)=> (a[1].correct/a[1].total) - (b[1].correct/b[1].total));
+  catEntries.forEach(([cat, s])=>{
+    const isGood = s.correct === s.total;
+    const row = document.createElement("div");
+    row.className = "catRow " + (isGood ? "good" : "weak");
+    row.innerHTML = "<span class=\"catName\">" + (isGood ? "\u2705" : "\u26a0\ufe0f") + " " + cat + "</span><span class=\"catScore\">" + s.correct + "/" + s.total + " to'g'ri</span>";
+    catListEl.appendChild(row);
+  });
+  catBreakdownEl.style.display = "block";
+}
+
+function showResult(){
+  const checkedCount = state.filter(s=>s.checked).length;
+  const correctCount = state.filter(s=>s.checked && s.correct).length;
+
+  if(checkedCount < data.length){
+    const qoldi = data.length - checkedCount;
+    const davomEt = confirm(
+      "Siz hali " + qoldi + " ta savolni tekshirmadingiz. " +
+      "Baribir yakunlab, natijani ko'rasizmi?"
+    );
+    if(!davomEt) return;
+  }
+
+  document.getElementById("quizArea").classList.add("hidden");
+  const rs = document.getElementById("resultScreen");
+  rs.classList.add("show");
+
+  document.getElementById("bigScore").textContent = correctCount + "/" + data.length;
+  const pct = Math.round((correctCount / data.length) * 100);
+  document.getElementById("pctScore").textContent = pct + "%";
+
+  const elapsedMs = Date.now() - testStartTime;
+  const vaqtStr = formatDuration(elapsedMs);
+  localStorage.setItem(DURATION_KEY, vaqtStr);
+  const timeNoteEl = document.getElementById("timeNote");
+  if(timeNoteEl) timeNoteEl.textContent = "Sarflangan vaqt: " + vaqtStr;
+  renderCategoryBreakdown();
+
+  const savedName = localStorage.getItem("oquvchi_ismi");
+  if(savedName) document.getElementById("nameInput").value = savedName;
+
+  // Natija ko'rilgan zahoti testni qulflaymiz — shu qurilmadan qayta topshirib
+  // bo'lmaydi (javoblarni ko'rib, qayta yechib 100% olishning oldini olish uchun).
+  lockTest();
+  document.getElementById("restartBtn").style.display = "none";
+  document.getElementById("lockedNote").style.display = "block";
+}
+
+function showLockedScreen(){
+  // Sahifa qayta ochilganda, agar test allaqachon yakunlangan bo'lsa,
+  // to'g'ridan-to'g'ri natija ekranini ko'rsatamiz va qayta yechishga yo'l qo'ymaymiz.
+  const correctCount = state.filter(s=>s.checked && s.correct).length;
+
+  document.getElementById("quizArea").classList.add("hidden");
+  document.getElementById("resultScreen").classList.add("show");
+  document.getElementById("bigScore").textContent = correctCount + "/" + data.length;
+  const pct = data.length ? Math.round((correctCount / data.length) * 100) : 0;
+  document.getElementById("pctScore").textContent = pct + "%";
+  const savedVaqt = localStorage.getItem(DURATION_KEY);
+  const timeNoteEl2 = document.getElementById("timeNote");
+  if(timeNoteEl2 && savedVaqt) timeNoteEl2.textContent = "Sarflangan vaqt: " + savedVaqt;
+  renderCategoryBreakdown();
+  document.getElementById("restartBtn").style.display = "none";
+  document.getElementById("lockedNote").style.display = "block";
+
+  const savedName = localStorage.getItem("oquvchi_ismi");
+  if(savedName) document.getElementById("nameInput").value = savedName;
+
+  if(localStorage.getItem("natija_yuborilgan_" + TEST_CONFIG.title) === "true"){
+    document.getElementById("sendResultBtn").disabled = true;
+    document.getElementById("sendStatus").textContent = "\u2705 Natija allaqachon yuborilgan.";
+    document.getElementById("sendStatus").style.color = "#1c7a33";
+    document.getElementById("resendZone").style.display = "block";
+  }
+}
+
+// O'qituvchi uchun qayta ochish: 1 marta bosilsa, kod so'raladi.
+document.getElementById("unlockTapZone").addEventListener("click", ()=>{
+  {
+    const kod = prompt("O'qituvchi kodi:");
+    if(kod === null) return;
+    if(kod === TEST_CONFIG.teacherUnlockCode){
+      const roziMi = confirm(
+        "Bu o'quvchiga testni QAYTA yechishga ruxsat berilsinmi?\n" +
+        "Avvalgi barcha javoblari tozalanadi."
+      );
+      if(roziMi){
+        localStorage.removeItem(LOCK_KEY);
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(SHUFFLE_KEY);localStorage.removeItem(QORDER_KEY);
+        localStorage.removeItem(TIME_KEY);
+        localStorage.removeItem(DURATION_KEY);
+        localStorage.removeItem(MINI_TIMER_KEY);
+        localStorage.removeItem("oquvchi_ismi");
+        localStorage.removeItem("natija_yuborilgan_" + TEST_CONFIG.title);
+        alert("Ochildi! Sahifa qayta yuklanadi.");
+        location.reload();
+      }
+    } else {
+      alert("Kod noto'g'ri.");
+    }
+  }
+});
+
+document.getElementById("resendLink").addEventListener("click", ()=>{
+  document.getElementById("sendResultBtn").disabled = false;
+  document.getElementById("sendStatus").textContent = "";
+  document.getElementById("resendZone").style.display = "none";
+});
+
+document.getElementById("restartBtn").addEventListener("click", ()=>{
+  const roziMi = confirm("Barcha javoblaringiz tozalanadi. Rozimisiz?");
+  if(!roziMi) return;
+  state = data.map(()=>({selected:null, checked:false, correct:null}));
+  saveState();
+
+  // Taymerlarni darhol, sahifa qayta yuklanishiga bog'liq bo'lmagan holda
+  // 00:00:00'ga qaytaramiz (miniStart va testStartTime shu skriptning
+  // umumiy o'zgaruvchilari, shuning uchun ularni to'g'ridan-to'g'ri
+  // yangilaymiz — bu reload ishlamay qolgan holatlarda ham ishlaydi).
+  localStorage.removeItem(MINI_TIMER_KEY);
+  localStorage.removeItem(TIME_KEY);
+  localStorage.removeItem(DURATION_KEY);
+  miniStart = Date.now();
+  localStorage.setItem(MINI_TIMER_KEY, String(miniStart));
+  updateMiniTimer();
+  testStartTime = getStartTime();
+
+  localStorage.removeItem(QORDER_KEY);
+  shuffleOrder = generateShuffle();
+  localStorage.setItem(SHUFFLE_KEY, JSON.stringify(shuffleOrder));
+  location.reload();
+  return;
+  cur = 0;
+  document.getElementById("resultScreen").classList.remove("show");
+  document.getElementById("quizArea").classList.remove("hidden");
+  document.getElementById("sendStatus").textContent = "";
+  render();
+});
+
+document.getElementById("sendResultBtn").addEventListener("click", ()=>{
+  const ism = document.getElementById("nameInput").value.trim();
+  const statusEl = document.getElementById("sendStatus");
+  if(!ism){
+    statusEl.textContent = "Iltimos, ismingizni kiriting.";
+    statusEl.style.color = "#c23c3c";
+    return;
+  }
+  localStorage.setItem("oquvchi_ismi", ism);
+
+  const correctCount = state.filter(s=>s.checked && s.correct).length;
+  const pct = Math.round((correctCount / data.length) * 100);
+  const vaqtStr = localStorage.getItem(DURATION_KEY) || formatDuration(Date.now() - testStartTime);
+  const ballMatni = correctCount + "/" + data.length + " (" + pct + "%) | " + vaqtStr;
+
+  statusEl.textContent = "Yuborilmoqda...";
+  statusEl.style.color = "#8a93a6";
+
+  const params = new URLSearchParams();
+  params.append(TEST_CONFIG.entryIsm, ism);
+  params.append(TEST_CONFIG.entryBall, ballMatni);
+  params.append(TEST_CONFIG.entryMavzu, TEST_CONFIG.title);
+
+  fetch(TEST_CONFIG.formUrl, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString()
+  }).then(()=>{
+    statusEl.textContent = "\u2705 Natija yuborildi!";
+    statusEl.style.color = "#1c7a33";
+    document.getElementById("sendResultBtn").disabled = true;
+    localStorage.setItem("natija_yuborilgan_" + TEST_CONFIG.title, "true");
+  }).catch(()=>{
+    statusEl.textContent = "\u26a0\ufe0f Yuborilmadi. Internetni tekshiring va qayta urining.";
+    statusEl.style.color = "#c23c3c";
+  });
+});
+</script>
+</body>
+</html>
